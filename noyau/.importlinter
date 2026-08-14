@@ -1,0 +1,26 @@
+﻿[importlinter]
+root_package = src
+
+[importlinter:contract:couches]
+name = Respect de l architecture en couches
+type = layers
+layers =
+    src.api
+    src.orchestration
+    src.gouvernance
+    src.apprentissage
+    src.symbolique
+    src.neuronal
+    src.donnees
+    src.domaine
+
+[importlinter:contract:isolation_neuronale]
+name = La couche neuronale n accede pas aux couches superieures
+type = forbidden
+source_modules =
+    src.neuronal
+forbidden_modules =
+    src.symbolique
+    src.gouvernance
+    src.orchestration
+    src.api
