@@ -1,4 +1,4 @@
-﻿[importlinter]
+[importlinter]
 root_package = src
 
 [importlinter:contract:couches]

@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "hotel-neurosymbolique"
 version = "0.1.0"
 description = "Systeme de raisonnement neuro-symbolique pour l'aide a la decision critique"
