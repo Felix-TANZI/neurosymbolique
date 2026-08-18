@@ -1,0 +1,37 @@
+# Gabarits de justification du service de gestion des chambres
+#
+# Chaque gabarit associe a un motif de raisonnement une formulation destinee a
+# un responsable. Les gabarits sont edites par un administrateur habilite, sans
+# modification ni recompilation du code source: le vocabulaire peut ainsi etre
+# adapte aux usages de l'etablissement.
+#
+# Les variables disponibles sont indiquees pour chaque section. Une variable
+# inconnue ou absente de la trace provoque une erreur explicite: aucune
+# formulation ne peut mentionner un element que le raisonnement n'a pas etabli.
+
+[decision]
+# Variables: chambre, examinees, admissibles
+retenue = "La chambre {chambre} est retenue. Elle satisfait l'ensemble des contraintes, sur {examinees} chambres examinees dont {admissibles} admissibles."
+sans_solution = "Aucune chambre ne peut etre affectee. Les {examinees} chambres examinees sont toutes ecartees."
+optimalite_non_garantie = "Le temps de calcul imparti a ete atteint. La proposition est conforme mais son optimalite n'est pas garantie."
+
+[rejet]
+# Variables: chambre, detail
+non_prete = "Chambre {chambre} ecartee : le nettoyage n'est pas acheve ou n'a pas ete controle."
+bloquee = "Chambre {chambre} ecartee : une intervention technique la rend indisponible."
+non_libre = "Chambre {chambre} ecartee : elle est deja occupee ou attribuee."
+sejour_en_conflit = "Chambre {chambre} ecartee : un sejour deja enregistre chevauche la periode demandee."
+equipement_absent = "Chambre {chambre} ecartee : l'equipement exige ({detail}) n'est pas disponible."
+capacite_insuffisante = "Chambre {chambre} ecartee : sa capacite ne couvre pas le nombre de personnes annonce."
+categorie_inferieure = "Chambre {chambre} ecartee : sa categorie est inferieure a celle prevue au contrat."
+
+[penalite]
+# Variables: poids
+souhait_non_satisfait = "Une preference exprimee n'est pas satisfaite par la chambre retenue."
+surclassement = "La chambre retenue est d'une categorie superieure a celle due, ce qui represente un manque a gagner."
+hors_secteur = "La chambre retenue se situe hors du secteur de nettoyage courant."
+etage_non_souhaite = "L'etage obtenu differe de celui souhaite."
+
+[regroupement]
+# Variables: nombre, motif
+plusieurs = "{nombre} chambres ecartees pour le meme motif : {motif}"
