@@ -141,12 +141,18 @@ def resoudre(
     rejets = tuple(sorted(constat["rejets"], key=lambda r: (r.chambre, r.motif)))
 
     if not modeles:
-        logger.info("aucune affectation admissible pour la situation soumise")
+        if interrompu:
+            logger.warning(
+                "recherche interrompue avant qu'une affectation ne soit etablie"
+            )
+        else:
+            logger.info("aucune affectation admissible pour la situation soumise")
         return Resultat(
             reservation="",
             chambre_retenue=None,
             admissibles=admissibles,
             rejets=rejets,
+            interrompu=interrompu,
         )
 
     dernier = modeles[-1]

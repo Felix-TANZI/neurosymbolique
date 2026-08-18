@@ -88,20 +88,21 @@ class TestSchema:
         assert onto.communiqueAvec.symmetric is True
 
 
-class TestDeduction:
-    @pytest.fixture(scope="class")
-    def onto_raisonnee(self) -> Ontology:
-        """Construit un parc de chambres puis execute le raisonneur une seule fois."""
-        onto = ontologie_neuve()
-        declarer_chambre(onto, "401", proprete=EtatProprete.PRETE)
-        declarer_chambre(onto, "402", proprete=EtatProprete.SALE)
-        declarer_chambre(onto, "403", proprete=EtatProprete.EN_NETTOYAGE)
-        declarer_chambre(onto, "404", proprete=EtatProprete.A_CONTROLER)
-        declarer_chambre(onto, "405", technique=EtatTechnique.BLOQUEE)
-        declarer_chambre(onto, "406", technique=EtatTechnique.DEGRADEE)
-        _raisonner(onto)
-        return onto
+@pytest.fixture(scope="module")
+def onto_raisonnee() -> Ontology:
+    """Construit un parc de chambres puis execute le raisonneur une seule fois."""
+    onto = ontologie_neuve()
+    declarer_chambre(onto, "401", proprete=EtatProprete.PRETE)
+    declarer_chambre(onto, "402", proprete=EtatProprete.SALE)
+    declarer_chambre(onto, "403", proprete=EtatProprete.EN_NETTOYAGE)
+    declarer_chambre(onto, "404", proprete=EtatProprete.A_CONTROLER)
+    declarer_chambre(onto, "405", technique=EtatTechnique.BLOQUEE)
+    declarer_chambre(onto, "406", technique=EtatTechnique.DEGRADEE)
+    _raisonner(onto)
+    return onto
 
+
+class TestDeduction:
     def test_une_chambre_prete_et_operationnelle_n_est_pas_indisponible(
         self, onto_raisonnee: Ontology
     ) -> None:

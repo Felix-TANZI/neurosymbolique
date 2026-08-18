@@ -29,8 +29,11 @@ from src.domaine import (
 )
 from src.symbolique.regles import (
     POIDS_PAR_DEFAUT,
+    MoteurIndisponibleError,
+    Rejet,
     Resultat,
     charger_regles,
+    diagnostiquer,
     identifiant_chambre,
     resoudre,
     traduire_situation,
@@ -522,3 +525,142 @@ class TestGarantieDeConformite:
             reference = identifiant_chambre(candidate)
             if reference not in resultat.admissibles:
                 assert resultat.rejets_de(reference)
+
+
+class TestDefaillances:
+    """Verifie le traitement explicite des defaillances du moteur.
+
+    Une defaillance non signalee sur le composant portant la garantie de
+    conformite passerait inapercue: chaque chemin d'erreur est donc verifie.
+    """
+
+    def test_un_programme_logique_invalide_est_signale(
+        self, regles: tuple[str, str]
+    ) -> None:
+        decision, diagnostic = regles
+        with pytest.raises(MoteurIndisponibleError):
+            resoudre(decision, diagnostic, "syntaxe manifestement invalide (((")
+
+    def test_des_regles_invalides_sont_signalees(self) -> None:
+        with pytest.raises(MoteurIndisponibleError):
+            resoudre("regle sans point valide (((", "", "chambre(c1).")
+
+    def test_un_diagnostic_invalide_est_signale(self, regles: tuple[str, str]) -> None:
+        decision, _ = regles
+        with pytest.raises(MoteurIndisponibleError):
+            resoudre(decision, "diagnostic invalide (((", "chambre(c1).")
+
+    def test_une_interruption_prive_la_solution_de_sa_garantie_d_optimalite(
+        self,
+    ) -> None:
+        interrompu = Resultat(
+            reservation="r4471",
+            chambre_retenue="c407",
+            admissibles=frozenset({"c407"}),
+            interrompu=True,
+        )
+        assert interrompu.a_conclu
+        assert not interrompu.optimal
+
+    def test_le_diagnostic_demeure_disponible_sans_decision(
+        self, regles: tuple[str, str]
+    ) -> None:
+        decision, diagnostic = regles
+        situation = traduire_situation(
+            [chambre("401", technique=EtatTechnique.BLOQUEE)], reservation()
+        )
+        constat = diagnostiquer(diagnostic, situation)
+        resultat = resoudre(decision, diagnostic, situation)
+        assert constat["rejets"]
+        assert not resultat.a_conclu
+        assert resultat.rejets
+
+
+class TestRestitutionDesRejets:
+    def test_un_rejet_simple_s_affiche_avec_son_motif(self) -> None:
+        assert str(Rejet(chambre="c401", motif="bloquee")) == "c401: bloquee"
+
+    def test_un_rejet_detaille_expose_son_argument(self) -> None:
+        rejet = Rejet(chambre="c401", motif="equipement_absent", detail="acces_pmr")
+        assert str(rejet) == "c401: equipement_absent(acces_pmr)"
+
+    def test_les_rejets_d_une_autre_chambre_sont_ecartes(
+        self, regles: tuple[str, str]
+    ) -> None:
+        resultat = resoudre_situation(
+            regles,
+            [chambre("401", technique=EtatTechnique.BLOQUEE), chambre("407")],
+            reservation(),
+        )
+        assert resultat.rejets_de("c999") == ()
+
+
+class _RechercheSimulee:
+    """Recherche dont le temps imparti expire avant l'achevement du calcul."""
+
+    def __init__(self, modeles: list[object]) -> None:
+        self._modeles = modeles
+        self.annulee = False
+
+    def __enter__(self) -> "_RechercheSimulee":
+        return self
+
+    def __exit__(self, *exception: object) -> None:
+        return None
+
+    def wait(self, temps: float) -> bool:
+        return False
+
+    def cancel(self) -> None:
+        self.annulee = True
+
+    def get(self) -> object:
+        return type("Statut", (), {"satisfiable": True})()
+
+
+class _ControleSimule:
+    """Controleur restituant une recherche dont le temps imparti expire."""
+
+    def __init__(self, *arguments: object) -> None:
+        self.recherche: _RechercheSimulee | None = None
+
+    def add(self, *arguments: object) -> None:
+        return None
+
+    def ground(self, *arguments: object) -> None:
+        return None
+
+    def solve(self, on_model: object = None, async_: bool = False) -> object:
+        if not async_:
+            return type("Statut", (), {"satisfiable": True})()
+        self.recherche = _RechercheSimulee([])
+        return self.recherche
+
+
+class TestDepassementDuTempsImparti:
+    """Verifie le comportement lorsque le calcul excede le temps alloue.
+
+    La condition de delai limite impose de restituer une solution exploitable
+    plutot que d'attendre indefiniment. Le depassement etant difficile a
+    provoquer sur une instance reelle, un controleur simule est substitue au
+    moteur.
+    """
+
+    def test_le_depassement_annule_la_recherche_et_leve_l_optimalite(
+        self, monkeypatch: pytest.MonkeyPatch, regles: tuple[str, str]
+    ) -> None:
+        controles: list[_ControleSimule] = []
+
+        def fabriquer(*arguments: object) -> _ControleSimule:
+            controle = _ControleSimule()
+            controles.append(controle)
+            return controle
+
+        monkeypatch.setattr("src.symbolique.regles.moteur.clingo.Control", fabriquer)
+        decision, diagnostic = regles
+        resultat = resoudre(decision, diagnostic, "chambre(c1).", temps_maximal=0.01)
+
+        assert resultat.interrompu
+        assert not resultat.optimal
+        assert controles[-1].recherche is not None
+        assert controles[-1].recherche.annulee
