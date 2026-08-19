@@ -30,7 +30,7 @@ POIDS_PAR_DEFAUT: dict[str, int] = {
     "priorite_urgente": 500,
     "priorite_elevee": 100,
     "hors_secteur": 20,
-    "achevement_tardif": 1,
+    "duree_de_service": 1,
 }
 
 
@@ -138,6 +138,7 @@ class _ModeleOrdonnancement:
         self._intervalles: dict[tuple[str, str], Any] = {}
         self._debuts: dict[str, Any] = {}
         self._fins: dict[str, Any] = {}
+        self._achevement: Any = None
 
     def construire(self) -> Any:
         """Declare les variables, les contraintes et la fonction d'evaluation."""
@@ -145,6 +146,7 @@ class _ModeleOrdonnancement:
         self._contraindre_affectation_unique()
         self._contraindre_non_recouvrement()
         self._contraindre_echeances()
+        self._contraindre_achevement()
         self._evaluer()
         return self._modele
 
@@ -155,6 +157,7 @@ class _ModeleOrdonnancement:
         correspondante est retenue.
         """
         horizon = max((agent.fin_minutes for agent in self._agents.values()), default=0)
+        self._achevement = self._modele.NewIntVar(0, horizon, "achevement_du_service")
         for tache in self._taches:
             self._planifiee[tache.identifiant] = self._modele.NewBoolVar(
                 f"planifiee_{tache.identifiant}"
@@ -215,6 +218,18 @@ class _ModeleOrdonnancement:
             if intervalles:
                 self._modele.AddNoOverlap(intervalles)
 
+    def _contraindre_achevement(self) -> None:
+        """Borne l'instant d'achevement du service par la fin de chaque tache.
+
+        Un critere unique d'achevement evite qu'une somme d'heures de fin, dont
+        l'echelle est celle des minutes, n'ecrase les preferences exprimees en
+        points.
+        """
+        for tache in self._taches:
+            self._modele.Add(
+                self._achevement >= self._fins[tache.identifiant]
+            ).OnlyEnforceIf(self._planifiee[tache.identifiant])
+
     def _contraindre_echeances(self) -> None:
         """Une tache sous echeance planifiee doit s'achever avant celle-ci."""
         for tache in self._taches:
@@ -243,9 +258,7 @@ class _ModeleOrdonnancement:
                         self._poids.get("hors_secteur", 20) * self._affectation[cle]
                     )
 
-            termes.append(
-                self._poids.get("achevement_tardif", 1) * self._fins[tache.identifiant]
-            )
+        termes.append(self._poids.get("duree_de_service", 1) * self._achevement)
 
         self._modele.Minimize(sum(termes))
 

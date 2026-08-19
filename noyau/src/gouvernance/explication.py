@@ -82,18 +82,20 @@ class Reformulateur(Protocol):
     def justifier(self, resultat: Resultat) -> Justification: ...
 
 
-def charger_catalogue(chemin: Path) -> dict[str, dict[str, str]]:
+def charger_catalogue(
+    chemin: Path, sections_attendues: tuple[str, ...] = SECTIONS_ATTENDUES
+) -> dict[str, dict[str, str]]:
     """Lit et valide un catalogue de gabarits."""
     if not chemin.is_file():
         raise CatalogueInvalideError(f"catalogue introuvable: {chemin}")
 
     contenu = tomllib.loads(chemin.read_text(encoding="utf-8"))
-    manquantes = [section for section in SECTIONS_ATTENDUES if section not in contenu]
+    manquantes = [section for section in sections_attendues if section not in contenu]
     if manquantes:
         raise CatalogueInvalideError(
             f"sections absentes du catalogue {chemin.name}: {', '.join(manquantes)}"
         )
-    return {section: dict(contenu[section]) for section in SECTIONS_ATTENDUES}
+    return {section: dict(contenu[section]) for section in sections_attendues}
 
 
 class GenerateurParGabarits:

@@ -1,0 +1,33 @@
+# Gabarits de justification du service housekeeping
+#
+# Chaque gabarit associe a un element du raisonnement une formulation destinee
+# a une gouvernante. Les gabarits sont edites par un administrateur habilite,
+# sans modification ni recompilation du code source.
+
+[decision]
+# Variables: planifiees, agents, achevement, en_attente
+planning_complet = "Les {planifiees} taches sont planifiees sur {agents} agents, service acheve a {achevement}."
+planning_partiel = "{planifiees} taches sont planifiees sur {agents} agents ; {en_attente} demeurent en attente."
+aucune_planification = "Aucune tache n'a pu etre planifiee sur les agents en service."
+optimalite_non_garantie = "Le temps de calcul imparti a ete atteint. Le planning est conforme mais son optimalite n'est pas garantie."
+
+[affectation]
+# Variables: tache, agent, debut, fin
+confiee = "{tache} confiee a {agent} de {debut} a {fin}."
+
+[non_planifiee]
+# Variables: tache
+aucun_agent_admissible = "{tache} ne peut etre confiee a aucun agent en service."
+capacite_insuffisante = "{tache} n'a pu etre planifiee : la capacite disponible est insuffisante."
+
+[rejet]
+# Variables: tache, agent, detail
+agent_absent = "{agent} est absent et ne peut recevoir {tache}."
+agent_en_retard = "{agent} n'a pas pris son service et ne peut recevoir {tache}."
+temps_insuffisant = "{agent} ne dispose pas du temps necessaire pour {tache}."
+competence_absente = "{agent} ne dispose pas de la qualification requise ({detail}) pour {tache}."
+secteur_reserve = "{agent} n'est pas habilite sur le secteur de {tache}."
+
+[regroupement]
+# Variables: nombre, motif
+plusieurs = "{nombre} taches ecartees pour le meme motif : {motif}"
