@@ -1,0 +1,161 @@
+/**
+ * Contrat d'echange avec le noyau de raisonnement.
+ *
+ * Les types reproduisent les schemas exposes par l'interface de programmation.
+ * Toute evolution du contrat cote noyau doit etre reportee ici: le compilateur
+ * signale alors les usages devenus incorrects.
+ */
+
+export type Categorie = 1 | 2 | 3 | 4;
+export type Priorite = 1 | 2 | 3;
+
+export type EtatProprete = "sale" | "en_nettoyage" | "a_controler" | "prete";
+export type EtatTechnique = "operationnelle" | "degradee" | "bloquee";
+export type EtatOccupation = "libre" | "attribuee" | "occupee";
+export type Disponibilite = "present" | "retard" | "absent";
+export type Prestation = "recouche" | "depart" | "remise_en_etat";
+
+export type Equipement =
+  | "lit_simple"
+  | "lit_double"
+  | "lit_king"
+  | "acces_pmr"
+  | "baignoire"
+  | "balcon"
+  | "climatisation"
+  | "coffre_fort";
+
+export interface Exigence {
+  equipement: Equipement;
+  obligatoire: boolean;
+}
+
+export interface ChambreEntrante {
+  numero: string;
+  etage: number;
+  capacite: number;
+  categorie: Categorie;
+  equipements: Equipement[];
+  etat_proprete: EtatProprete;
+  etat_technique: EtatTechnique;
+  etat_occupation: EtatOccupation;
+  chambres_communicantes: string[];
+}
+
+export interface ReservationEntrante {
+  identifiant: string;
+  client: string;
+  statut_fidelite: number;
+  arrivee: string;
+  depart: string;
+  nombre_personnes: number;
+  categorie_contractee: Categorie;
+  heure_arrivee_prevue: string;
+  heure_acces_contractuelle: string;
+  exigences: Exigence[];
+  chambre_affectee: string | null;
+}
+
+export interface DemandeAffectation {
+  parc: ChambreEntrante[];
+  reservation: ReservationEntrante;
+  occupations?: ReservationEntrante[];
+  poids?: Record<string, number> | null;
+  temps_maximal?: number | null;
+}
+
+export interface Motif {
+  code: string;
+  detail: string | null;
+}
+
+export interface OptionEcartee {
+  chambre: string;
+  motifs: Motif[];
+  formulations: string[];
+}
+
+export interface Contrepartie {
+  code: string;
+  poids: number;
+  formulation: string;
+}
+
+export interface Recommandation {
+  a_conclu: boolean;
+  chambre_proposee: string | null;
+  justification: string;
+  chambres_examinees: number;
+  chambres_admissibles: string[];
+  cout: number;
+  optimal: boolean;
+  sous_reserve: boolean;
+  contreparties: Contrepartie[];
+  options_ecartees: OptionEcartee[];
+}
+
+export interface AgentEntrant {
+  identifiant: string;
+  secteur: string;
+  debut_service: string;
+  fin_service: string;
+  disponibilite: Disponibilite;
+  minutes_deja_affectees: number;
+  competences: string[];
+}
+
+export interface TacheEntrante {
+  identifiant: string;
+  chambre: string;
+  prestation: Prestation;
+  secteur: string;
+  echeance: string | null;
+  priorite: Priorite;
+  duree_minutes: number;
+  competences_requises: string[];
+}
+
+export interface DemandePlanification {
+  agents: AgentEntrant[];
+  taches: TacheEntrante[];
+  secteurs_reserves?: string[];
+  poids?: Record<string, number> | null;
+  temps_maximal?: number | null;
+}
+
+export interface Affectation {
+  tache: string;
+  agent: string;
+  debut: string;
+  fin: string;
+  duree_minutes: number;
+}
+
+export type CauseAttente = "aucun_agent_admissible" | "capacite_insuffisante";
+
+export interface TacheEnAttente {
+  tache: string;
+  cause: CauseAttente;
+  motifs: string[];
+}
+
+export interface Charge {
+  agent: string;
+  minutes: number;
+}
+
+export interface Planification {
+  est_complete: boolean;
+  justification: string[];
+  affectations: Affectation[];
+  taches_en_attente: TacheEnAttente[];
+  charges: Charge[];
+  cout: number;
+  optimal: boolean;
+  sous_reserve: boolean;
+}
+
+export interface Anomalie {
+  code: string;
+  message: string;
+}

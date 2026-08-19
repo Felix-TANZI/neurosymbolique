@@ -7,6 +7,7 @@ __pycache__/
 .coverage
 htmlcov/
 *.sqlite3
+donnees_locales/
 modeles/*.pt
 modeles/*.pth
 node_modules/

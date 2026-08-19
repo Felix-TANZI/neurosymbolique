@@ -1,0 +1,62 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-creme: #f2eee8;
+  --color-panneau: #ffffff;
+  --color-sourd: #e9e4dc;
+  --color-encre: #171412;
+  --color-accent: #e1362a;
+  --color-accent-sourd: #f9e6e3;
+  --color-service: #6e665e;
+  --color-bordure: #dcd5cb;
+  --color-succes: #2f6b4f;
+  --color-attente: #a8690f;
+
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-corps: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-panneau: 1.5rem;
+  --radius-carte: 1.125rem;
+  --radius-pastille: 999px;
+
+  --text-enorme: 4.5rem;
+  --text-enorme--line-height: 1;
+  --text-enorme--letter-spacing: -0.03em;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-creme);
+    color: var(--color-encre);
+  }
+
+  body {
+    font-family: var(--font-corps);
+    font-feature-settings: "tnum" 1, "cv05" 1;
+    margin: 0;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

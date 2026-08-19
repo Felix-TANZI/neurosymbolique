@@ -10,7 +10,7 @@ de contraintes ordonnance les taches sur les seules paires retenues.
 """
 
 import logging
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import time
 from pathlib import Path
@@ -65,9 +65,6 @@ class DemandePlanification:
             raise DemandeInvalideError("le service soumis ne comporte aucun agent")
         if not self.service.taches_a_planifier:
             raise DemandeInvalideError("le service soumis ne comporte aucune tache")
-        identifiants = [tache.identifiant for tache in self.service.taches]
-        if len(identifiants) != len(set(identifiants)):
-            raise DemandeInvalideError("le service comporte des taches en double")
 
 
 @dataclass(frozen=True, slots=True)
@@ -239,14 +236,21 @@ def creer_cas_usage_housekeeping(racine_connaissances: Path) -> PlanifierNettoya
 
 
 def demande_de_service(
-    taches: Iterable[TacheNettoyage],
-    agents: Iterable[AgentEtage],
+    taches: Sequence[TacheNettoyage],
+    agents: Sequence[AgentEtage],
     competences_par_agent: dict[str, Sequence[str]] | None = None,
     exigences_par_tache: dict[str, Sequence[str]] | None = None,
     secteurs_reserves: Sequence[str] = (),
     poids: dict[str, int] | None = None,
 ) -> DemandePlanification:
-    """Construit une demande a partir de sequences quelconques."""
+    """Construit une demande a partir de sequences quelconques.
+
+    L'unicite des identifiants est verifiee sur les sequences fournies: une
+    fois converties en ensembles, les entites de meme identite seraient
+    silencieusement fusionnees.
+    """
+    _verifier_unicite([tache.identifiant for tache in taches], "taches")
+    _verifier_unicite([str(agent.identifiant) for agent in agents], "agents")
     return DemandePlanification(
         service=ServiceEtage(taches=frozenset(taches), agents=frozenset(agents)),
         competences_par_agent={
@@ -260,6 +264,12 @@ def demande_de_service(
         secteurs_reserves=tuple(secteurs_reserves),
         poids=poids,
     )
+
+
+def _verifier_unicite(identifiants: Sequence[str], designation: str) -> None:
+    """Signale toute identite apparaissant plus d'une fois."""
+    if len(identifiants) != len(set(identifiants)):
+        raise DemandeInvalideError(f"le service comporte des {designation} en double")
 
 
 def en_heure(minutes: int) -> time:
