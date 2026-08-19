@@ -656,7 +656,7 @@ class TestDepassementDuTempsImparti:
             controles.append(controle)
             return controle
 
-        monkeypatch.setattr("src.symbolique.regles.moteur.clingo.Control", fabriquer)
+        monkeypatch.setattr("src.symbolique.regles.execution.clingo.Control", fabriquer)
         decision, diagnostic = regles
         resultat = resoudre(decision, diagnostic, "chambre(c1).", temps_maximal=0.01)
 

@@ -1,12 +1,18 @@
 """Moteur de regles du raisonnement symbolique."""
 
-from .moteur import (
+from .execution import (
+    ConstatDePaires,
     MoteurIndisponibleError,
-    Penalite,
     ReglesIntrouvablesError,
+    RejetDePaire,
+    charger_regles,
+    diagnostiquer_paires,
+    preparer,
+)
+from .moteur import (
+    Penalite,
     Rejet,
     Resultat,
-    charger_regles,
     diagnostiquer,
     resoudre,
 )
@@ -20,16 +26,20 @@ from .traduction import (
 
 __all__ = [
     "POIDS_PAR_DEFAUT",
+    "ConstatDePaires",
     "MoteurIndisponibleError",
     "Penalite",
     "Rejet",
+    "RejetDePaire",
     "ReglesIntrouvablesError",
     "Resultat",
     "TraductionImpossibleError",
     "charger_regles",
     "diagnostiquer",
+    "diagnostiquer_paires",
     "identifiant_chambre",
     "identifiant_reservation",
+    "preparer",
     "resoudre",
     "traduire_situation",
 ]

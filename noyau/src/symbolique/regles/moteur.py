@@ -8,22 +8,13 @@ situation, ce qui garantit la stabilite des justifications.
 
 import logging
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any
 
-import clingo
+from .execution import MoteurIndisponibleError, preparer
 
 logger = logging.getLogger(__name__)
 
 TEMPS_DE_CALCUL_PAR_DEFAUT = 10.0
-
-
-class MoteurIndisponibleError(RuntimeError):
-    """Signale une defaillance du moteur de regles ou de son chargement."""
-
-
-class ReglesIntrouvablesError(FileNotFoundError):
-    """Signale l'absence du fichier de regles attendu."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -74,13 +65,6 @@ class Resultat:
         return tuple(rejet for rejet in self.rejets if rejet.chambre == chambre)
 
 
-def charger_regles(chemin: Path) -> str:
-    """Lit un fichier de regles depuis la base de connaissances."""
-    if not chemin.is_file():
-        raise ReglesIntrouvablesError(f"fichier de regles introuvable: {chemin}")
-    return chemin.read_text(encoding="utf-8")
-
-
 def diagnostiquer(regles_diagnostic: str, situation: str) -> dict[str, Any]:
     """Etablit les chambres admissibles et le motif de rejet des autres.
 
@@ -89,7 +73,7 @@ def diagnostiquer(regles_diagnostic: str, situation: str) -> dict[str, Any]:
     possible. C'est ce qui garantit qu'une option ecartee porte toujours son
     motif, y compris en l'absence de solution.
     """
-    controle = _preparer(regles_diagnostic, situation)
+    controle = preparer(regles_diagnostic, situation)
     constat: dict[str, Any] = {"admissibles": [], "rejets": []}
 
     def retenir(modele: Any) -> None:
@@ -117,7 +101,7 @@ def resoudre(
     l'optimalite n'etant alors pas garantie.
     """
     constat = diagnostiquer(regles_diagnostic, situation)
-    controle = _preparer(regles_decision, situation)
+    controle = preparer(regles_decision, situation)
     modeles: list[dict[str, Any]] = []
 
     def retenir(modele: Any) -> None:
@@ -173,25 +157,6 @@ def resoudre(
         resultat.cout,
     )
     return resultat
-
-
-def _preparer(regles: str, situation: str) -> Any:
-    """Construit et fonde le programme logique.
-
-    L'interface de clingo n'exposant pas de signature typee, la construction du
-    controleur est isolee dans cette fonction.
-    """
-    fabrique: Any = clingo.Control
-    controle = fabrique(["--opt-mode=opt"])
-    try:
-        controle.add("base", [], regles)
-        controle.add("base", [], situation)
-        controle.ground([("base", [])])
-    except RuntimeError as erreur:
-        raise MoteurIndisponibleError(
-            f"programme logique invalide: {erreur}"
-        ) from erreur
-    return controle
 
 
 def _extraire(modele: Any) -> dict[str, Any]:
