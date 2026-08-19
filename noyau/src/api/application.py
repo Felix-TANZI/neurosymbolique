@@ -133,7 +133,7 @@ def _vers_domaine(demande: DemandeAffectation) -> Demande:
         )
     except (DemandeInvalideError, ValueError) as erreur:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail=Anomalie(code="demande_invalide", message=str(erreur)).model_dump(),
         ) from erreur
 

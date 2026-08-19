@@ -7,6 +7,12 @@ a la base de connaissances, editable sans modification du code.
 """
 
 from .entites import Chambre, Client, Incident, Reservation
+from .entites_housekeeping import (
+    DUREES_PAR_DEFAUT,
+    AgentEtage,
+    ServiceEtage,
+    TacheNettoyage,
+)
 from .etats import (
     Categorie,
     Equipement,
@@ -17,6 +23,12 @@ from .etats import (
     StatutFidelite,
     TypeIncident,
 )
+from .etats_housekeeping import (
+    DisponibiliteAgent,
+    PrioriteTache,
+    StatutTache,
+    TypePrestation,
+)
 from .valeurs import (
     Exigence,
     HeureArrivee,
@@ -25,11 +37,15 @@ from .valeurs import (
     Periode,
     ValeurInvalideError,
 )
+from .valeurs_housekeeping import IdentifiantAgent, PlageDeService, Secteur
 
 __all__ = [
+    "DUREES_PAR_DEFAUT",
+    "AgentEtage",
     "Categorie",
     "Chambre",
     "Client",
+    "DisponibiliteAgent",
     "Equipement",
     "EtatOccupation",
     "EtatProprete",
@@ -37,12 +53,20 @@ __all__ = [
     "Exigence",
     "Gravite",
     "HeureArrivee",
+    "IdentifiantAgent",
     "IdentifiantReservation",
     "Incident",
     "NumeroChambre",
     "Periode",
+    "PlageDeService",
+    "PrioriteTache",
     "Reservation",
+    "Secteur",
+    "ServiceEtage",
     "StatutFidelite",
+    "StatutTache",
+    "TacheNettoyage",
     "TypeIncident",
+    "TypePrestation",
     "ValeurInvalideError",
 ]
