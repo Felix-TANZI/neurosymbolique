@@ -37,6 +37,18 @@ def adresse_configuree() -> str:
     return f"sqlite:///{FICHIER_PAR_DEFAUT}"
 
 
+def _preparer_emplacement(adresse: str) -> None:
+    """Cree le dossier d'accueil d'une base sur fichier.
+
+    L'absence du dossier produirait une erreur d'ouverture peu explicite,
+    survenant a la premiere connexion plutot qu'a la configuration.
+    """
+    if not adresse.startswith("sqlite:///") or adresse.endswith(":memory:"):
+        return
+    fichier = Path(adresse.removeprefix("sqlite:///"))
+    fichier.parent.mkdir(parents=True, exist_ok=True)
+
+
 def creer_moteur(adresse: str | None = None, tracer: bool = False) -> Engine:
     """Construit le moteur de connexion et applique ses reglages.
 
@@ -45,6 +57,7 @@ def creer_moteur(adresse: str | None = None, tracer: bool = False) -> Engine:
     serveur, et evite qu'une incoherence ne se revele qu'au deploiement.
     """
     cible = adresse or adresse_configuree()
+    _preparer_emplacement(cible)
     try:
         moteur = create_engine(cible, echo=tracer, future=True)
     except Exception as erreur:

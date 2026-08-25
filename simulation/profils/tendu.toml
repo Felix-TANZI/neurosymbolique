@@ -1,0 +1,22 @@
+# Etablissement sature
+#
+# Profil d'exception: occupation quasi complete, incidents nombreux et
+# effectif reduit a un agent par secteur. Il engendre des situations sans
+# solution, sur lesquelles se verifie que chaque option ecartee porte son
+# motif de rejet.
+
+nom = "Etablissement sature"
+description = "Etablissement en tension, capacite inferieure a la charge"
+
+chambres = 150
+etages = 6
+taux_occupation = 0.98
+part_incidents = 0.12
+part_pmr = 0.06
+part_communicantes = 0.10
+part_arrivees_a_traiter = 0.35
+agents_par_secteur = 1
+part_agents_indisponibles = 0.30
+horizon_jours = 10
+heure_de_reference = "09:00"
+graine = 20260815

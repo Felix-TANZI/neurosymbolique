@@ -1,0 +1,20 @@
+# Etablissement urbain d'affaires
+#
+# Parc restreint, rotation elevee, sejours courts. Ce profil constitue la
+# reference de developpement et de demonstration: sa taille permet une lecture
+# integrale des situations engendrees.
+
+nom = "Hotel urbain"
+description = "Etablissement d'affaires de centre-ville, rotation elevee"
+
+chambres = 120
+etages = 6
+taux_occupation = 0.82
+part_incidents = 0.03
+part_pmr = 0.04
+part_communicantes = 0.08
+part_arrivees_a_traiter = 0.15
+part_agents_indisponibles = 0.12
+horizon_jours = 14
+heure_de_reference = "10:00"
+graine = 20260812

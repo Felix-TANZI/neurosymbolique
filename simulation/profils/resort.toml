@@ -1,0 +1,20 @@
+# Resort balneaire
+#
+# Parc etendu, sejours longs, forte proportion de chambres communicantes
+# destinees aux familles. L'horizon elargi eprouve la tenue du raisonnement
+# sur un volume de reservations superieur a celui du profil urbain.
+
+nom = "Resort balneaire"
+description = "Etablissement de loisirs en bord de mer, sejours prolonges"
+
+chambres = 400
+etages = 10
+taux_occupation = 0.75
+part_incidents = 0.04
+part_pmr = 0.06
+part_communicantes = 0.18
+part_arrivees_a_traiter = 0.20
+part_agents_indisponibles = 0.15
+horizon_jours = 21
+heure_de_reference = "10:00"
+graine = 20260813

@@ -1,0 +1,20 @@
+# Complexe hotelier
+#
+# Parc le plus etendu des profils de reference. Il eprouve la montee en
+# charge: le temps de calcul du raisonnement y devient observable, ce qui
+# permet de verifier que la borne de temps est respectee.
+
+nom = "Complexe hotelier"
+description = "Grand etablissement multi-batiments, forte montee en charge"
+
+chambres = 800
+etages = 16
+taux_occupation = 0.80
+part_incidents = 0.035
+part_pmr = 0.05
+part_communicantes = 0.12
+part_arrivees_a_traiter = 0.18
+part_agents_indisponibles = 0.14
+horizon_jours = 21
+heure_de_reference = "10:00"
+graine = 20260814
