@@ -408,7 +408,7 @@ class GenerateurDEtablissement:
             duree = self._sort.choices([1, 2, 3, 4, 7], weights=[0.2, 0.3, 0.25, 0.15, 0.1])[0]
             arrivee = jour + timedelta(days=decalage)
             client = self._sort.choice(list(clients))
-            reference = self._sort.choice(list(chambres))
+            reference = self._tirer_chambre_de_reference(chambres, client)
             categorie = reference.categorie
 
             exigences = set()
@@ -449,6 +449,26 @@ class GenerateurDEtablissement:
             )
 
         return self._affecter_sejours(reservations, chambres, jour)
+
+    def _tirer_chambre_de_reference(
+        self, chambres: Sequence[Chambre], client: Client
+    ) -> Chambre:
+        """Tire la chambre sur laquelle sont calquees les exigences d'un sejour.
+
+        La chambre retenue satisfait les besoins permanents du client: sans
+        cette precaution, un sejour pourrait exiger un equipement que la
+        chambre de reference ne possede pas, et ne trouver aucune chambre
+        compatible dans le parc.
+        """
+        if not client.besoins_permanents:
+            return self._sort.choice(list(chambres))
+
+        compatibles = [
+            chambre
+            for chambre in chambres
+            if client.besoins_permanents <= chambre.equipements
+        ]
+        return self._sort.choice(compatibles or list(chambres))
 
     def _affecter_sejours(
         self, reservations: list[Reservation], chambres: Sequence[Chambre], jour: date

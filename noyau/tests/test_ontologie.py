@@ -102,6 +102,7 @@ def onto_raisonnee() -> Ontology:
     return onto
 
 
+@pytest.mark.lent
 class TestDeduction:
     def test_une_chambre_prete_et_operationnelle_n_est_pas_indisponible(
         self, onto_raisonnee: Ontology

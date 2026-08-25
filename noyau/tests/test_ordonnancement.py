@@ -295,6 +295,7 @@ def services_quelconques(
     return taches, agents
 
 
+@pytest.mark.lent
 class TestGarantiesDOrdonnancement:
     """Verifie les proprietes structurelles du modele sur des situations engendrees.
 

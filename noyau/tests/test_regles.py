@@ -457,6 +457,7 @@ def demandes_quelconques(tirage: st.DrawFn) -> Reservation:
     )
 
 
+@pytest.mark.lent
 class TestGarantieDeConformite:
     """Verifie l'exigence centrale du systeme sur des situations engendrees.
 

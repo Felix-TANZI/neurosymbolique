@@ -31,3 +31,6 @@ follow_untyped_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --cov=src --cov-report=term-missing --cov-fail-under=80"
+markers = [
+    "lent: test dont l'execution depasse la seconde, exclu de la boucle courte",
+]
