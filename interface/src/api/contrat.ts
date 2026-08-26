@@ -159,3 +159,84 @@ export interface Anomalie {
   code: string;
   message: string;
 }
+
+/* Consultation de l'etat de l'etablissement */
+
+export interface ChambreConsultee {
+  numero: string;
+  etage: number;
+  capacite: number;
+  categorie: Categorie;
+  categorie_libelle: string;
+  equipements: Equipement[];
+  etat_proprete: EtatProprete;
+  etat_technique: EtatTechnique;
+  etat_occupation: EtatOccupation;
+  attribuable: boolean;
+  chambres_communicantes: string[];
+}
+
+export interface ReservationConsultee {
+  identifiant: string;
+  client: string;
+  statut_fidelite: number;
+  arrivee: string;
+  depart: string;
+  nuitees: number;
+  nombre_personnes: number;
+  categorie_contractee: Categorie;
+  heure_arrivee_prevue: string;
+  heure_acces_contractuelle: string;
+  arrivee_anticipee: boolean;
+  exigences_obligatoires: Equipement[];
+  exigences_souhaitees: Equipement[];
+  chambre_affectee: string | null;
+}
+
+export interface AgentConsulte {
+  identifiant: string;
+  secteur: string;
+  debut_service: string;
+  fin_service: string;
+  disponibilite: Disponibilite;
+  minutes_restantes: number;
+  affectable: boolean;
+  competences: string[];
+}
+
+export interface TacheConsultee {
+  identifiant: string;
+  chambre: string;
+  prestation: Prestation;
+  secteur: string;
+  echeance: string | null;
+  priorite: Priorite;
+  statut: string;
+  duree_minutes: number;
+  competences_requises: string[];
+}
+
+export interface IncidentConsulte {
+  identifiant: string;
+  chambre: string;
+  type_incident: string;
+  gravite: number;
+  signale_le: string;
+  description: string;
+  resolu: boolean;
+}
+
+export interface EtatDeLEtablissement {
+  jour: string;
+  chambres: number;
+  disponibles: number;
+  arrivees_a_traiter: number;
+  incidents_ouverts: number;
+  taches_a_planifier: number;
+  agents_affectables: number;
+}
+
+export interface ParametresDeDecision {
+  poids?: Record<string, number> | null;
+  temps_maximal?: number | null;
+}

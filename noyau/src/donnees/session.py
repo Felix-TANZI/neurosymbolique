@@ -13,6 +13,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from sqlalchemy import Engine, create_engine, event
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from .modeles import Base
@@ -106,15 +107,20 @@ def session_de_travail(fabrique: sessionmaker[Session]) -> Iterator[Session]:
 
     L'annulation est systematique en cas d'erreur: une ecriture partielle
     laisserait l'etat operationnel incoherent, ce qui fausserait tout
-    raisonnement ulterieur.
+    raisonnement ulterieur. Une erreur applicative, telle qu'une entite
+    introuvable, est propagee sans etre journalisee comme defaillance: elle
+    releve du deroulement normal et sa trace encombrerait les journaux.
     """
     session = fabrique()
     try:
         yield session
         session.commit()
+    except SQLAlchemyError:
+        session.rollback()
+        logger.exception("session annulee a la suite d'une defaillance de la base")
+        raise
     except Exception:
         session.rollback()
-        logger.exception("session annulee a la suite d'une defaillance")
         raise
     finally:
         session.close()

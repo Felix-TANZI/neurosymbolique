@@ -7,11 +7,18 @@
  */
 
 import type {
+  AgentConsulte,
   Anomalie,
+  ChambreConsultee,
   DemandeAffectation,
   DemandePlanification,
+  EtatDeLEtablissement,
+  IncidentConsulte,
+  ParametresDeDecision,
   Planification,
   Recommandation,
+  ReservationConsultee,
+  TacheConsultee,
 } from "./contrat";
 
 const RACINE = "/api";
@@ -70,6 +77,90 @@ async function envoyer<E, S>(chemin: string, corps: E): Promise<S> {
   }
 
   return (await reponse.json()) as S;
+}
+
+async function lire<S>(chemin: string): Promise<S> {
+  const reponse = await fetch(`${RACINE}${chemin}`, { cache: "no-store" });
+
+  if (!reponse.ok) {
+    throw await lireAnomalie(reponse);
+  }
+
+  return (await reponse.json()) as S;
+}
+
+function parametres(entrees: Record<string, string | boolean | undefined>): string {
+  const retenues = Object.entries(entrees).filter(
+    ([, valeur]) => valeur !== undefined && valeur !== false,
+  );
+  if (retenues.length === 0) {
+    return "";
+  }
+  const chaine = new URLSearchParams(
+    retenues.map(([cle, valeur]) => [cle, String(valeur)]),
+  );
+  return `?${chaine.toString()}`;
+}
+
+export function consulterEtablissement(
+  jour: string,
+): Promise<EtatDeLEtablissement> {
+  return lire<EtatDeLEtablissement>(`/etablissement${parametres({ jour })}`);
+}
+
+export function consulterChambres(options: {
+  secteur?: string;
+  attribuables?: boolean;
+} = {}): Promise<ChambreConsultee[]> {
+  return lire<ChambreConsultee[]>(`/chambres${parametres(options)}`);
+}
+
+export function consulterArriveesATraiter(
+  jour: string,
+): Promise<ReservationConsultee[]> {
+  return lire<ReservationConsultee[]>(
+    `/reservations/a-traiter${parametres({ jour })}`,
+  );
+}
+
+export function consulterReservation(
+  reference: string,
+): Promise<ReservationConsultee> {
+  return lire<ReservationConsultee>(`/reservations/${reference}`);
+}
+
+export function consulterAgents(
+  secteur?: string,
+): Promise<AgentConsulte[]> {
+  return lire<AgentConsulte[]>(`/agents${parametres({ secteur })}`);
+}
+
+export function consulterTaches(secteur?: string): Promise<TacheConsultee[]> {
+  return lire<TacheConsultee[]>(`/taches${parametres({ secteur })}`);
+}
+
+export function consulterIncidents(): Promise<IncidentConsulte[]> {
+  return lire<IncidentConsulte[]>("/incidents");
+}
+
+export function recommanderPourReservation(
+  reference: string,
+  options: ParametresDeDecision = {},
+): Promise<Recommandation> {
+  return envoyer<ParametresDeDecision, Recommandation>(
+    `/affectations/${reference}`,
+    options,
+  );
+}
+
+export function planifierLeService(
+  secteur?: string,
+  options: ParametresDeDecision = {},
+): Promise<Planification> {
+  return envoyer<ParametresDeDecision, Planification>(
+    `/planifications/service${parametres({ secteur })}`,
+    options,
+  );
 }
 
 export async function verifierDisponibilite(): Promise<{ disponible: true }> {

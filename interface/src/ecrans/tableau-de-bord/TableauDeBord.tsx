@@ -68,14 +68,18 @@ export function TableauDeBord() {
         <EnTeteDeSection
           eyebrow="Session courante"
           titre={
-            session.etabliLe ? "Une situation analysee" : "Aucune situation"
+            session.etabliLe
+              ? session.service === "chambres"
+                ? `Sejour ${session.reference} analyse`
+                : `Secteur ${session.secteur?.replace(/_/g, " ")} analyse`
+              : "Aucune situation analysee"
           }
           action={
             <Link
               to="/analyse"
               className="inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
             >
-              Decrire une situation
+              Designer une situation
               <ArrowUpRight size={15} />
             </Link>
           }
@@ -83,7 +87,7 @@ export function TableauDeBord() {
         <p className="max-w-2xl text-sm leading-relaxed text-service">
           {session.etabliLe
             ? `Situation soumise a ${session.etabliLe.toLocaleTimeString("fr-FR")}, en attente de decision.`
-            : "Choisissez une situation de reference dans l'ecran d'analyse pour observer le raisonnement."}
+            : "Le systeme consulte l'etat de l'etablissement et compose lui-meme la situation a partir de l'entite designee."}
         </p>
       </Panneau>
     </div>

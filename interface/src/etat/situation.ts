@@ -1,25 +1,20 @@
 /**
- * Conservation de la situation soumise entre les ecrans.
+ * Conservation de la decision courante entre les ecrans.
  *
- * L'ecran d'analyse etablit la situation, les ecrans de recommandation et de
- * validation l'exploitent. La conservation demeure en memoire: aucune donnee
- * n'est persistee cote interface, le noyau demeurant seul detenteur de l'etat.
+ * L'ecran d'analyse designe l'entite a traiter, les ecrans de restitution et
+ * de validation exploitent l'issue du raisonnement. La conservation demeure en
+ * memoire: le noyau demeure seul detenteur de l'etat de l'etablissement.
  */
 
 import { createContext, useContext } from "react";
-import type {
-  DemandeAffectation,
-  DemandePlanification,
-  Planification,
-  Recommandation,
-} from "@/api/contrat";
+import type { Planification, Recommandation } from "@/api/contrat";
 
 export type Service = "chambres" | "housekeeping";
 
 export interface Session {
   service: Service;
-  demandeChambres: DemandeAffectation | null;
-  demandeHousekeeping: DemandePlanification | null;
+  reference: string | null;
+  secteur: string | null;
   recommandation: Recommandation | null;
   planification: Planification | null;
   etabliLe: Date | null;
@@ -27,8 +22,8 @@ export interface Session {
 
 export const SESSION_INITIALE: Session = {
   service: "chambres",
-  demandeChambres: null,
-  demandeHousekeeping: null,
+  reference: null,
+  secteur: null,
   recommandation: null,
   planification: null,
   etabliLe: null,

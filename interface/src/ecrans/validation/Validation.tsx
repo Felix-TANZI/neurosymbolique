@@ -31,10 +31,10 @@ export function Validation() {
 
   const proposition =
     session.service === "chambres"
-      ? session.recommandation?.chambre_proposee
+      ? (session.recommandation?.chambre_proposee ?? "Aucune chambre admissible")
       : session.planification?.est_complete
         ? "Planning complet"
-        : "Planning partiel";
+        : "Planification partielle";
 
   if (!session.etabliLe) {
     return <AucuneDecisionAExaminer />;
@@ -63,6 +63,11 @@ export function Validation() {
               Proposition soumise a votre decision
             </p>
             <p className="font-display text-3xl text-creme">{proposition}</p>
+            <p className="mt-1 text-sm text-creme/60">
+              {session.service === "chambres"
+                ? `Sejour ${session.reference}`
+                : `Secteur ${session.secteur?.replace(/_/g, " ") ?? ""}`}
+            </p>
           </div>
           <Pastille nature="accent">
             {session.service === "chambres" ? "Chambres" : "Housekeeping"}

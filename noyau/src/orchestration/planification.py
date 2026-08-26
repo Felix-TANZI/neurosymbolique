@@ -10,7 +10,7 @@ de contraintes ordonnance les taches sur les seules paires retenues.
 """
 
 import logging
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import time
 from pathlib import Path
@@ -238,8 +238,8 @@ def creer_cas_usage_housekeeping(racine_connaissances: Path) -> PlanifierNettoya
 def demande_de_service(
     taches: Sequence[TacheNettoyage],
     agents: Sequence[AgentEtage],
-    competences_par_agent: dict[str, Sequence[str]] | None = None,
-    exigences_par_tache: dict[str, Sequence[str]] | None = None,
+    competences_par_agent: Mapping[str, Sequence[str]] | None = None,
+    exigences_par_tache: Mapping[str, Sequence[str]] | None = None,
     secteurs_reserves: Sequence[str] = (),
     poids: dict[str, int] | None = None,
 ) -> DemandePlanification:
