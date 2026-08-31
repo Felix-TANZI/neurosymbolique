@@ -1,0 +1,12 @@
+{
+  "taille_du_vocabulaire": 847,
+  "nombre_d_intentions": 15,
+  "nombre_d_etiquettes": 15,
+  "dimension": 256,
+  "nombre_de_couches": 4,
+  "nombre_de_tetes": 8,
+  "dimension_interne": 1024,
+  "longueur_maximale": 48,
+  "abandon": 0.1,
+  "indice_de_remplissage": 0
+}

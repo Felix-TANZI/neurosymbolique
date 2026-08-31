@@ -1,0 +1,26 @@
+{
+  "corpus": {
+    "entrainement": 10200,
+    "validation": 1800,
+    "evaluation": 1995,
+    "intentions": 15,
+    "enonces_distincts_entrainement": 9135,
+    "enonces_distincts_validation": 1752,
+    "enonces_distincts_evaluation": 1898
+  },
+  "vocabulaire": 847,
+  "parametres": 3396382,
+  "validation": {
+    "justesse_d_intention": 0.9983333333333333,
+    "mesure_f1_des_entites": 1.0,
+    "justesse_complete": 0.9983333333333333
+  },
+  "evaluation": {
+    "justesse_d_intention": 0.6862155388471178,
+    "precision_des_entites": 0.9616,
+    "rappel_des_entites": 0.9554848966613673,
+    "mesure_f1_des_entites": 0.9585326953748007,
+    "justesse_complete": 0.643609022556391
+  },
+  "graine": 20260812
+}

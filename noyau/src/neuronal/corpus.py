@@ -22,6 +22,7 @@ from random import Random
 
 from .patrons import PATRONS_ENTRAINEMENT, PATRONS_EVALUATION
 from .taxonomie import ETIQUETTE_HORS_ENTITE, Intention, TypeDEntite
+from .tokeniseur import segmenter
 
 logger = logging.getLogger(__name__)
 
@@ -138,15 +139,6 @@ class Corpus:
         for enonce in self.entrainement:
             comptes[enonce.intention] = comptes.get(enonce.intention, 0) + 1
         return dict(sorted(comptes.items()))
-
-
-def segmenter(texte: str) -> list[str]:
-    """Decoupe un enonce en jetons.
-
-    La segmentation isole la ponctuation des mots afin qu'un signe accole a
-    une entite n'en fasse pas partie.
-    """
-    return re.findall(r"\w+|[^\w\s]", texte.lower(), re.UNICODE)
 
 
 class GenerateurDeCorpus:
