@@ -457,6 +457,14 @@ def demandes_quelconques(tirage: st.DrawFn) -> Reservation:
     )
 
 
+@st.composite
+def situations_quelconques(
+    tirage: st.DrawFn,
+) -> tuple[list[Chambre], Reservation]:
+    """Engendre un parc et la demande qui lui est soumise."""
+    return tirage(parcs_quelconques()), tirage(demandes_quelconques())
+
+
 @pytest.mark.lent
 class TestGarantieDeConformite:
     """Verifie l'exigence centrale du systeme sur des situations engendrees.
@@ -526,6 +534,62 @@ class TestGarantieDeConformite:
             reference = identifiant_chambre(candidate)
             if reference not in resultat.admissibles:
                 assert resultat.rejets_de(reference)
+
+
+@pytest.mark.lent
+class TestConcordanceDesProgrammes:
+    """Verifie que diagnostic et decision appliquent les memes contraintes.
+
+    Les deux programmes expriment separement les memes regles: le premier
+    etablit les options admissibles, le second en retient une. Rien ne
+    garantit leur coherence, et une contrainte presente dans l'un et absente
+    de l'autre demeurerait invisible: le diagnostic declarerait admissible ce
+    qu'aucune decision ne pourrait retenir, sans qu'aucune mesure ne le
+    signale.
+    """
+
+    @settings(
+        max_examples=80,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    @given(situation=situations_quelconques())
+    def test_une_option_admissible_peut_etre_retenue(
+        self, regles: tuple[str, str], situation: tuple[list[Chambre], Reservation]
+    ) -> None:
+        parc, demande = situation
+        decision, diagnostic = regles
+        traduite = traduire_situation(parc, demande)
+
+        constat = diagnostiquer(diagnostic, traduite)
+        resultat = resoudre(decision, diagnostic, traduite)
+
+        if constat["admissibles"]:
+            assert resultat.a_conclu, (
+                f"{len(constat['admissibles'])} chambres declarees admissibles "
+                f"mais aucune retenue: les deux programmes divergent"
+            )
+
+    @settings(
+        max_examples=80,
+        deadline=None,
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
+    )
+    @given(situation=situations_quelconques())
+    def test_la_chambre_retenue_figure_parmi_les_admissibles(
+        self, regles: tuple[str, str], situation: tuple[list[Chambre], Reservation]
+    ) -> None:
+        parc, demande = situation
+        decision, diagnostic = regles
+        traduite = traduire_situation(parc, demande)
+
+        constat = diagnostiquer(diagnostic, traduite)
+        resultat = resoudre(decision, diagnostic, traduite)
+
+        if resultat.chambre_retenue is not None:
+            assert resultat.chambre_retenue in constat["admissibles"], (
+                "la decision retient une chambre que le diagnostic ecarte"
+            )
 
 
 class TestDefaillances:
