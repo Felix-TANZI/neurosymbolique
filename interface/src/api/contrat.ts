@@ -240,3 +240,34 @@ export interface ParametresDeDecision {
   poids?: Record<string, number> | null;
   temps_maximal?: number | null;
 }
+
+/* Interpretation d'enonces libres */
+
+export type Recevabilite = "recevable" | "a_confirmer" | "irrecevable";
+
+export interface EntiteLue {
+  type_d_entite: string;
+  valeur: string;
+  confiance: number;
+  existe: boolean | null;
+}
+
+export interface ReserveExprimee {
+  motif: string;
+  detail: string;
+}
+
+export interface LectureRestituee {
+  enonce: string;
+  intention: string;
+  confiance: number;
+  entites: EntiteLue[];
+  reserves: ReserveExprimee[];
+  recevabilite: Recevabilite;
+  modele: string;
+}
+
+export interface EnonceSoumis {
+  enonce: string;
+  confiance_minimale?: number | null;
+}

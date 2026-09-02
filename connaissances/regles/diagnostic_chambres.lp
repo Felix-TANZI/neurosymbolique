@@ -14,9 +14,17 @@
 #defined occupation_existante/2.
 #defined exigence_obligatoire/2.
 #defined dispose_de/2.
+#defined imminent/0.
+
+% Les etats de proprete et d'occupation ne valent que pour le jour constate.
+% Une chambre sale sera nettoyee, une chambre occupee sera liberee: leur etat
+% du jour ne saurait ecarter une affectation portant sur une date ulterieure.
+% Seule la disponibilite calendaire, etablie par les sejours enregistres,
+% demeure opposable a une decision future.
 
 rejet(R, C, non_prete) :-
     a_affecter(R), chambre(C),
+    imminent,
     etat_proprete(C, Etat), Etat != prete.
 
 rejet(R, C, bloquee) :-
@@ -25,6 +33,7 @@ rejet(R, C, bloquee) :-
 
 rejet(R, C, non_libre) :-
     a_affecter(R), chambre(C),
+    imminent,
     etat_occupation(C, Etat), Etat != libre.
 
 rejet(R, C, sejour_en_conflit) :-

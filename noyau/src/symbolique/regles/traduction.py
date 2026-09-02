@@ -6,6 +6,7 @@ fichiers de connaissances, editables sans modification du code.
 """
 
 from collections.abc import Iterable, Sequence
+from datetime import date
 
 from src.domaine import Chambre, Reservation
 
@@ -128,8 +129,14 @@ def traduire_situation(
     reservation_a_affecter: Reservation,
     occupations: Iterable[Reservation] = (),
     poids: dict[str, int] | None = None,
+    jour: date | None = None,
 ) -> str:
-    """Assemble le programme logique decrivant une situation complete."""
+    """Assemble le programme logique decrivant une situation complete.
+
+    Le jour de reference determine si les etats instantanes du parc sont
+    opposables: ils ne le sont que pour une arrivee imminente, une chambre
+    sale ou occupee ce jour ne l'etant plus a une date ulterieure.
+    """
     lignes: list[str] = []
 
     for chambre in chambres:
@@ -144,4 +151,17 @@ def traduire_situation(
     lignes.extend(traduire_chevauchements([reservation_a_affecter, *presentes]))
     lignes.extend(traduire_poids(poids or POIDS_PAR_DEFAUT))
 
+    if _est_imminente(reservation_a_affecter, jour):
+        lignes.append("imminent.")
+
     return "\n".join(lignes)
+
+
+def _est_imminente(reservation: Reservation, jour: date | None) -> bool:
+    """Etablit si l'arrivee a lieu assez tot pour que l'etat du jour compte.
+
+    L'imminence couvre le jour meme et le lendemain: au-dela, le service
+    d'etage aura traite la chambre et son occupant l'aura quittee.
+    """
+    reference = jour or date.today()
+    return (reservation.periode.arrivee - reference).days <= 1

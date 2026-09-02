@@ -14,10 +14,12 @@ from datetime import date
 
 from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
+from sqlalchemy.orm import Session
 
 from src.api.dependances import (
     CasUsage,
     CasUsageHousekeeping,
+    InterpreteDEnonces,
     SessionDeBase,
     obtenir_cas_usage,
 )
@@ -45,6 +47,8 @@ from src.api.schemas_housekeeping import (
     PlanificationSortante,
     TacheEnAttenteSortante,
 )
+from src.api.schemas_interpretation import EnonceSoumis, LectureRestituee
+from src.domaine import Periode
 from src.donnees import (
     DepotAgents,
     DepotChambres,
@@ -54,6 +58,11 @@ from src.donnees import (
     EntiteIntrouvableError,
 )
 from src.gouvernance import GabaritIntrouvableError
+from src.neuronal.inference import (
+    ReferentielConnu,
+    referentiel_depuis,
+    verifier_les_entites,
+)
 from src.orchestration import (
     AffecterChambre,
     Demande,
@@ -340,7 +349,64 @@ def creer_application() -> FastAPI:
             _planifier(cas, service, options.temps_maximal)
         )
 
+    @application.post(
+        "/interpretations",
+        response_model=LectureRestituee,
+        summary="Interpreter un enonce libre",
+        tags=["interpretation"],
+        responses={
+            422: {"description": "Enonce vide ou trop long"},
+            503: {"description": "Modele d'interpretation indisponible"},
+        },
+    )
+    def interpreter(
+        soumission: EnonceSoumis,
+        interprete: InterpreteDEnonces,
+        session: SessionDeBase,
+    ) -> LectureRestituee:
+        """Etablit ce qu'un enonce exprime, sans engager aucune action.
+
+        Les entites reconnues sont confrontees aux references de
+        l'etablissement: une lecture plausible mais sans correspondance reelle
+        est signalee plutot qu'exploitee. Une lecture dont la confiance est
+        insuffisante ou dont une entite demeure incertaine appelle une
+        confirmation avant que le raisonnement ne s'engage.
+        """
+        lecture = interprete.interpreter(soumission.enonce)
+        verifiee = verifier_les_entites(lecture, _referentiel(session))
+        logger.info(
+            "enonce interprete: %s, confiance %.2f, %s",
+            verifiee.intention or "aucune",
+            verifiee.confiance_d_intention,
+            verifiee.recevabilite,
+        )
+        return LectureRestituee.depuis(verifiee, "camembert-base specialise")
+
     return application
+
+
+def _referentiel(session: Session) -> ReferentielConnu:
+    """Constitue le referentiel des references de l'etablissement.
+
+    Le referentiel fait autorite face aux extractions du modele: une reference
+    absente n'existe pas, quelle que soit la confiance accordee a la lecture.
+    """
+    depot = DepotChambres(session)
+    parc = depot.lister()
+    annee = date.today().year
+    return referentiel_depuis(
+        chambres=[str(chambre.numero) for chambre in parc],
+        reservations=[
+            str(sejour.identifiant)
+            for sejour in DepotReservations(session).lister_sur_periode(
+                Periode(date(annee, 1, 1), date(annee + 1, 1, 1))
+            )
+        ],
+        agents=[str(agent.identifiant) for agent in DepotAgents(session).lister()],
+        secteurs=sorted(
+            {depot.secteur_de(chambre.numero).replace("_", " ") for chambre in parc}
+        ),
+    )
 
 
 def _vers_domaine(demande: DemandeAffectation) -> Demande:

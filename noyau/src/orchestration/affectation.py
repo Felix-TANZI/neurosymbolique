@@ -9,6 +9,7 @@ apparaissant ici serait mal placee.
 import logging
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from datetime import date
 from pathlib import Path
 from typing import Final
 
@@ -58,6 +59,7 @@ class Demande:
     reservation: Reservation
     occupations: tuple[Reservation, ...] = ()
     poids: dict[str, int] | None = None
+    jour: date | None = None
 
     def __post_init__(self) -> None:
         if not self.parc:
@@ -161,6 +163,7 @@ class AffecterChambre:
             demande.reservation,
             demande.occupations,
             demande.poids,
+            demande.jour,
         )
 
         resultat = self._raisonner(situation, temps_maximal)
@@ -230,6 +233,7 @@ def demande_depuis(
     reservation: Reservation,
     occupations: Sequence[Reservation] = (),
     poids: dict[str, int] | None = None,
+    jour: date | None = None,
 ) -> Demande:
     """Construit une demande a partir de sequences quelconques."""
     return Demande(
@@ -237,4 +241,5 @@ def demande_depuis(
         reservation=reservation,
         occupations=tuple(occupations),
         poids=poids,
+        jour=jour,
     )

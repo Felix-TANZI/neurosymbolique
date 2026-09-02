@@ -13,7 +13,6 @@ import os
 import sys
 
 import torch
-
 from src.neuronal.modele_preentraine import (
     ConfigurationPreentrainee,
     PerteConjointeAlignee,
@@ -26,7 +25,8 @@ def memoire_du_processus() -> float:
     try:
         import psutil
 
-        return psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024
+        occupation: int = psutil.Process(os.getpid()).memory_info().rss
+        return occupation / 1024 / 1024
     except ImportError:
         return -1.0
 
@@ -37,7 +37,9 @@ def memoire_de_la_machine() -> tuple[float, float]:
         import psutil
 
         memoire = psutil.virtual_memory()
-        return memoire.total / 1024 / 1024, memoire.available / 1024 / 1024
+        totale: int = memoire.total
+        disponible: int = memoire.available
+        return totale / 1024 / 1024, disponible / 1024 / 1024
     except ImportError:
         return -1.0, -1.0
 

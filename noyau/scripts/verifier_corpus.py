@@ -11,8 +11,9 @@ Emploi:
 import sys
 from collections import defaultdict
 
-from scripts.specialiser import relever_les_entites
 from src.neuronal import GenerateurDeCorpus
+
+from scripts.specialiser import relever_les_entites
 
 
 def main() -> int:

@@ -16,6 +16,7 @@
 #defined secteur_prefere/2.
 #defined secteur/2.
 #defined etage_souhaite/2.
+#defined imminent/0.
 
 % ---------------------------------------------------------------------
 % Espace des affectations possibles
@@ -27,10 +28,13 @@
 % Deductions intermediaires
 % ---------------------------------------------------------------------
 
-disponible(C) :-
+exploitable(C) :-
     chambre(C),
+    etat_technique(C, T), T != bloquee.
+
+disponible(C) :-
+    exploitable(C),
     etat_proprete(C, prete),
-    etat_technique(C, T), T != bloquee,
     etat_occupation(C, libre).
 
 exigence_manquante(R, E) :-
@@ -48,8 +52,19 @@ surclassement(R, C) :-
 % Contraintes dures
 % ---------------------------------------------------------------------
 
-% CD-1  Une chambre indisponible ne peut etre affectee.
-:- affectation(_, C), not disponible(C).
+% Les etats de proprete et d'occupation ne valent que pour le jour constate.
+% La condition d'imminence est identique a celle du diagnostic: les deux
+% programmes doivent appliquer les memes contraintes, sans quoi une option
+% declaree admissible pourrait n'etre retenue par aucune decision.
+%
+% L'etat technique, lui, demeure opposable a toute echeance: une chambre
+% bloquee ne se remet pas en service par le seul ecoulement du temps.
+
+% CD-1  Une chambre hors service ne peut etre affectee, a toute echeance.
+:- affectation(_, C), not exploitable(C).
+
+% CD-1bis  Pour une arrivee imminente, l'etat du jour est opposable.
+:- affectation(_, C), imminent, not disponible(C).
 
 % CD-2  Deux sejours qui se chevauchent ne peuvent partager une chambre.
 :- affectation(R1, C), affectation(R2, C), R1 != R2, chevauchent(R1, R2).

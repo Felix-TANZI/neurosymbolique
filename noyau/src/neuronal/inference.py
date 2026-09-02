@@ -287,7 +287,7 @@ class Interprete:
 
         attendues = ENTITES_ATTENDUES.get(Intention(interpretation.intention), frozenset())
         obtenues = {entite.type_d_entite for entite in interpretation.entites}
-        essentielle = _entite_essentielle(attendues)
+        essentielle = entite_essentielle(attendues)
 
         if essentielle is not None and essentielle.value not in obtenues:
             reserves.append(
@@ -308,7 +308,7 @@ class Interprete:
         )
 
 
-def _entite_essentielle(attendues: frozenset[TypeDEntite]) -> TypeDEntite | None:
+def entite_essentielle(attendues: frozenset[TypeDEntite]) -> TypeDEntite | None:
     """Designe l'entite sans laquelle l'intention demeure inexploitable.
 
     Une intention portant sur une chambre est inexploitable si la chambre

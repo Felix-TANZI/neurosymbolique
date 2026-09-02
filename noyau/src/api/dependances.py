@@ -28,6 +28,8 @@ from src.donnees import (
     creer_moteur,
     session_de_travail,
 )
+from src.neuronal.inference_preentrainee import InterpretePreentraineDEnonces
+from src.neuronal.specialisation import charger_specialise
 from src.orchestration import (
     AffecterChambre,
     ConnaissancesIndisponiblesError,
@@ -39,6 +41,12 @@ from src.orchestration import (
 logger = logging.getLogger(__name__)
 
 RACINE_CONNAISSANCES = Path(__file__).resolve().parents[2].parent / "connaissances"
+RACINE_MODELES = Path(__file__).resolve().parents[2] / "modeles"
+MODELE_PREENTRAINE = RACINE_MODELES / "interprete-preentraine"
+
+
+class InterpreteIndisponibleError(RuntimeError):
+    """Signale l'absence d'un modele d'interpretation exploitable."""
 
 
 def _anomalie(code: str, message: str, statut: int) -> HTTPException:
@@ -59,6 +67,25 @@ def obtenir_cas_usage() -> AffecterChambre:
 def obtenir_cas_usage_housekeeping() -> PlanifierNettoyage:
     """Construit le cas d'usage du service housekeeping une seule fois."""
     return creer_cas_usage_housekeeping(RACINE_CONNAISSANCES)
+
+
+@lru_cache(maxsize=1)
+def obtenir_interprete() -> InterpretePreentraineDEnonces:
+    """Charge le modele d'interpretation une seule fois.
+
+    Le modele fonde sur un encodeur preentraine est retenu: la mesure etablit
+    qu'il reconnait les intentions exprimees en des termes absents du corpus
+    d'entrainement, ce dont le modele appris depuis l'initialisation demeure
+    incapable.
+    """
+    if not (MODELE_PREENTRAINE / "parametres.pt").is_file():
+        raise InterpreteIndisponibleError(
+            f"aucun modele d'interpretation sous {MODELE_PREENTRAINE}; "
+            "executez le script de specialisation"
+        )
+    modele, tokeniseur = charger_specialise(MODELE_PREENTRAINE)
+    logger.info("modele d'interpretation charge depuis %s", MODELE_PREENTRAINE)
+    return InterpretePreentraineDEnonces(modele, tokeniseur)
 
 
 @lru_cache(maxsize=1)
@@ -93,6 +120,19 @@ def fournir_cas_usage_housekeeping() -> Iterator[PlanifierNettoyage]:
         ) from erreur
 
 
+def fournir_interprete() -> Iterator[InterpretePreentraineDEnonces]:
+    """Fournit l'interprete, en signalant toute indisponibilite."""
+    try:
+        yield obtenir_interprete()
+    except InterpreteIndisponibleError as erreur:
+        logger.exception("modele d'interpretation indisponible")
+        raise _anomalie(
+            "interprete_indisponible",
+            str(erreur),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from erreur
+
+
 def fournir_session() -> Iterator[Session]:
     """Ouvre une session de base pour la duree d'une requete."""
     try:
@@ -118,5 +158,8 @@ def fournir_session() -> Iterator[Session]:
 CasUsage = Annotated[AffecterChambre, Depends(fournir_cas_usage)]
 CasUsageHousekeeping = Annotated[
     PlanifierNettoyage, Depends(fournir_cas_usage_housekeeping)
+]
+InterpreteDEnonces = Annotated[
+    InterpretePreentraineDEnonces, Depends(fournir_interprete)
 ]
 SessionDeBase = Annotated[Session, Depends(fournir_session)]

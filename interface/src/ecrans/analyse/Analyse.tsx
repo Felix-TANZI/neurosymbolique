@@ -17,21 +17,35 @@ import {
   planifierLeService,
   recommanderPourReservation,
 } from "@/api/client";
+import type { LectureRestituee } from "@/api/contrat";
 import { EnTeteDeSection, Panneau } from "@/composants/Panneau";
 import { Pastille } from "@/composants/Pastille";
 import { jourParDefaut } from "@/etat/jour";
-import { useSession, type Service } from "@/etat/situation";
+import { useSession } from "@/etat/situation";
 import { ArriveesATraiter } from "./ArriveesATraiter";
 import { EtatDuJour } from "./EtatDuJour";
+import { SaisieLibre } from "./SaisieLibre";
 import { ServicesDEtage } from "./ServicesDEtage";
 
-const SERVICES: { valeur: Service; libelle: string }[] = [
+type ModeDeSaisie = "libre" | "chambres" | "housekeeping";
+
+const MODES: { valeur: ModeDeSaisie; libelle: string }[] = [
+  { valeur: "libre", libelle: "Decrire librement" },
   { valeur: "chambres", libelle: "Gestion des chambres" },
   { valeur: "housekeeping", libelle: "Housekeeping" },
 ];
 
+const CONDUITES: Record<ModeDeSaisie, string> = {
+  libre:
+    "Decrivez la situation dans vos termes. Le noyau en etablit une lecture, que vous confirmez avant que le raisonnement ne s'engage.",
+  chambres:
+    "Les sejours ci-dessous arrivent aujourd'hui sans chambre affectee. Le noyau etablit le parc, les occupations concurrentes et les exigences depuis l'etat de l'etablissement.",
+  housekeeping:
+    "Choisissez un secteur pour organiser son service. Le noyau etablit les taches en attente, les agents en service et leurs qualifications.",
+};
+
 export function Analyse() {
-  const [service, setService] = useState<Service>("chambres");
+  const [mode, setMode] = useState<ModeDeSaisie>("libre");
   const jour = jourParDefaut();
   const { definir } = useSession();
   const naviguer = useNavigate();
@@ -44,7 +58,7 @@ export function Analyse() {
   const arrivees = useQuery({
     queryKey: ["arrivees", jour],
     queryFn: () => consulterArriveesATraiter(jour),
-    enabled: service === "chambres",
+    enabled: mode === "chambres",
   });
 
   const affectation = useMutation({
@@ -78,6 +92,35 @@ export function Analyse() {
     },
   });
 
+  const surLectureConfirmee = (lecture: LectureRestituee) => {
+    const chambre = lecture.entites.find(
+      (entite) => entite.type_d_entite === "chambre",
+    );
+    const secteur = lecture.entites.find(
+      (entite) => entite.type_d_entite === "secteur",
+    );
+    const reservation = lecture.entites.find(
+      (entite) => entite.type_d_entite === "reservation",
+    );
+
+    if (lecture.intention === "demande_planification" && secteur) {
+      planification.mutate(secteur.valeur.replace(/ /g, "_"));
+      return;
+    }
+
+    if (reservation) {
+      affectation.mutate(reservation.valeur);
+      return;
+    }
+
+    if (chambre) {
+      setMode("chambres");
+      return;
+    }
+
+    setMode("chambres");
+  };
+
   const enCours = affectation.isPending || planification.isPending;
   const anomalie = affectation.error ?? planification.error;
 
@@ -101,18 +144,18 @@ export function Analyse() {
 
         <div
           role="radiogroup"
-          aria-label="Service concerne"
+          aria-label="Mode de saisie"
           className="mb-5 flex flex-wrap gap-2"
         >
-          {SERVICES.map(({ valeur, libelle }) => {
-            const retenu = service === valeur;
+          {MODES.map(({ valeur, libelle }) => {
+            const retenu = mode === valeur;
             return (
               <button
                 key={valeur}
                 type="button"
                 role="radio"
                 aria-checked={retenu}
-                onClick={() => setService(valeur)}
+                onClick={() => setMode(valeur)}
                 className={[
                   "rounded-[var(--radius-pastille)] px-5 py-2.5 text-sm font-medium transition-colors",
                   retenu
@@ -127,15 +170,15 @@ export function Analyse() {
         </div>
 
         <p className="max-w-2xl text-sm leading-relaxed text-service">
-          {service === "chambres"
-            ? "Les sejours ci-dessous arrivent aujourd'hui sans chambre affectee. Le noyau etablit le parc, les occupations concurrentes et les exigences depuis l'etat de l'etablissement."
-            : "Choisissez un secteur pour organiser son service. Le noyau etablit les taches en attente, les agents en service et leurs qualifications."}
+          {CONDUITES[mode]}
         </p>
 
         {anomalie ? <AnomalieDeSoumission erreur={anomalie} /> : null}
       </Panneau>
 
-      {service === "chambres" ? (
+      {mode === "libre" ? (
+        <SaisieLibre surConfirmation={surLectureConfirmee} />
+      ) : mode === "chambres" ? (
         <ArriveesATraiter
           arrivees={arrivees.data ?? []}
           enChargement={arrivees.isPending}

@@ -19,6 +19,13 @@ from .composition import (
     composer_planification,
     etat_de_l_etablissement,
 )
+from .incident import (
+    ConsequencesDUnIncident,
+    SejourARelogerr,
+    SignalementDIncident,
+    TraiterUnIncident,
+    etat_technique_apres,
+)
 from .planification import (
     ConnaissancesHousekeeping,
     DemandePlanification,
@@ -34,6 +41,7 @@ __all__ = [
     "Connaissances",
     "ConnaissancesIndisponiblesError",
     "ConnaissancesHousekeeping",
+    "ConsequencesDUnIncident",
     "Demande",
     "DemandePlanification",
     "DemandeInvalideError",
@@ -41,8 +49,11 @@ __all__ = [
     "PlanificationProposee",
     "PlanifierNettoyage",
     "Recommandation",
+    "SejourARelogerr",
+    "SignalementDIncident",
     "SituationIncompleteError",
     "TacheNonPlanifiee",
+    "TraiterUnIncident",
     "arrivees_a_traiter",
     "chambres_du_parc",
     "composer_affectation",
@@ -52,4 +63,5 @@ __all__ = [
     "demande_de_service",
     "demande_depuis",
     "etat_de_l_etablissement",
+    "etat_technique_apres",
 ]

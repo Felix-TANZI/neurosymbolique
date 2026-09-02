@@ -12,8 +12,10 @@ import type {
   ChambreConsultee,
   DemandeAffectation,
   DemandePlanification,
+  EnonceSoumis,
   EtatDeLEtablissement,
   IncidentConsulte,
+  LectureRestituee,
   ParametresDeDecision,
   Planification,
   Recommandation,
@@ -184,4 +186,12 @@ export function planifierNettoyage(
     "/planifications",
     demande,
   );
+}
+
+export function interpreterEnonce(
+  enonce: string,
+): Promise<LectureRestituee> {
+  return envoyer<EnonceSoumis, LectureRestituee>("/interpretations", {
+    enonce,
+  });
 }
