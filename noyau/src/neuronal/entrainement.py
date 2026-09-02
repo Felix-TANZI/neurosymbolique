@@ -177,7 +177,7 @@ def _planifier(
     return torch.optim.lr_scheduler.LambdaLR(optimiseur, facteur)
 
 
-def _extraire_entites(etiquettes: Sequence[str]) -> set[tuple[int, int, str]]:
+def extraire_entites(etiquettes: Sequence[str]) -> set[tuple[int, int, str]]:
     """Restitue les entites sous forme d'intervalles types.
 
     La comparaison porte sur des intervalles complets et non sur des jetons
@@ -249,13 +249,13 @@ def evaluer(
                 )
                 intentions_exactes += int(intention_exacte)
 
-                predites = _extraire_entites(
+                predites = extraire_entites(
                     [
                         etiquettes_lisibles[int(indice)]
                         for indice in etiquettes[rang][1:utile]
                     ]
                 )
-                attendues = _extraire_entites(
+                attendues = extraire_entites(
                     [
                         etiquettes_lisibles[int(indice)]
                         for indice in lot["etiquettes"][rang][1:utile]

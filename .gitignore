@@ -15,3 +15,5 @@ dist/
 .env
 .vscode/
 .idea/
+noyau/modeles/*/parametres.pt
+noyau/modeles/*/segmenteur/

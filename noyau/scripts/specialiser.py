@@ -1,16 +1,16 @@
-"""Entrainement de la couche d'interpretation.
+"""Specialisation de l'encodeur preentraine sur le domaine.
 
-Le script constitue le corpus a partir des entites de l'etablissement, entraine
-le modele et consigne ses parametres, son vocabulaire et ses mesures.
+Le script constitue le corpus a partir des entites de l'etablissement, puis
+specialise un encodeur preentraine sur les taches du domaine.
 
-Les entites employees pour engendrer le corpus sont celles de l'etablissement
-persiste: un modele entraine sur des references fictives reconnaitrait mal les
-references reelles, dont la forme differe.
+Le corpus est identique a celui employe pour le modele appris depuis
+l'initialisation, meme graine comprise: les deux modeles demeurent ainsi
+comparables, seul l'encodeur les distinguant.
 
 Emploi:
-    python -m scripts.entrainer
-    python -m scripts.entrainer --epoques 40 --par-intention 800
-    python -m scripts.entrainer --destination modeles/interprete-v2
+    python -m scripts.specialiser
+    python -m scripts.specialiser --epoques 4 --couches-gelees 10
+    python -m scripts.specialiser --detaille
 """
 
 import argparse
@@ -29,45 +29,39 @@ from src.donnees import (
     creer_moteur,
     session_de_travail,
 )
-from src.neuronal import (
-    GenerateurDeCorpus,
-    Tokeniseur,
-    construire_vocabulaire,
-    verifier,
+from src.neuronal import GenerateurDeCorpus, verifier
+from src.neuronal.modele_preentraine import (
+    ConfigurationPreentrainee,
+    PerteConjointeAlignee,
 )
-from src.neuronal.entrainement import (
-    ConfigurationDEntrainement,
-    JeuDEnonces,
-    entrainer,
-    evaluer,
+from src.neuronal.specialisation import (
+    ConfigurationDeSpecialisation,
+    JeuSegmente,
+    evaluer_segmente,
+    specialiser,
 )
-from src.neuronal.modele import ConfigurationDuModele, PerteConjointe
 from src.neuronal.taxonomie import Intention, indices_des_etiquettes
+from src.neuronal.tokeniseur_aligne import TokeniseurAligne
 from torch.utils.data import DataLoader
 
 RACINE_MODELES = Path(__file__).resolve().parents[1] / "modeles"
-DESTINATION_PAR_DEFAUT = RACINE_MODELES / "interprete"
+DESTINATION_PAR_DEFAUT = RACINE_MODELES / "interprete-preentraine"
 
-logger = logging.getLogger("entrainement")
+logger = logging.getLogger("specialisation")
 
 
 def relever_les_entites() -> dict[str, list[str]]:
-    """Releve les references reelles de l'etablissement persiste.
-
-    En l'absence d'etablissement, des references de repli sont employees: le
-    modele demeure entrainable, au prix d'une moindre fidelite aux formes
-    effectivement rencontrees.
-    """
+    """Releve les references reelles de l'etablissement persiste."""
     moteur = creer_moteur()
     try:
         fabrique = creer_fabrique_de_sessions(moteur)
         with session_de_travail(fabrique) as session:
-            depot_chambres = DepotChambres(session)
-            parc = depot_chambres.lister()
+            depot = DepotChambres(session)
+            parc = depot.lister()
             chambres = [str(chambre.numero) for chambre in parc]
             secteurs = sorted(
                 {
-                    depot_chambres.secteur_de(chambre.numero).replace("_", " ")
+                    depot.secteur_de(chambre.numero).replace("_", " ")
                     for chambre in parc
                 }
             )
@@ -84,7 +78,9 @@ def relever_les_entites() -> dict[str, list[str]]:
     if not chambres:
         logger.warning("etablissement absent, references de repli employees")
         return {
-            "chambre": [f"{etage}{rang:02d}" for etage in range(1, 7) for rang in range(1, 21)],
+            "chambre": [
+                f"{etage}{rang:02d}" for etage in range(1, 7) for rang in range(1, 21)
+            ],
             "agent": [f"A-{rang:04d}" for rang in range(1, 13)],
             "secteur": [f"etage {etage}" for etage in range(1, 7)],
             "reservation": [f"R-{rang:05d}" for rang in range(1, 200)],
@@ -101,29 +97,28 @@ def relever_les_entites() -> dict[str, list[str]]:
 def construire_analyseur() -> argparse.ArgumentParser:
     """Declare les options acceptees par le script."""
     analyseur = argparse.ArgumentParser(
-        prog="entrainer",
-        description="Entraine la couche d'interpretation des enonces.",
+        prog="specialiser",
+        description="Specialise un encodeur preentraine sur le domaine.",
     )
-    analyseur.add_argument("--epoques", type=int, default=40)
+    analyseur.add_argument("--encodeur", default="camembert-base")
+    analyseur.add_argument("--epoques", type=int, default=4)
+    analyseur.add_argument("--couches-gelees", type=int, default=10)
+    analyseur.add_argument("--taille-de-lot", type=int, default=16)
+    analyseur.add_argument("--longueur", type=int, default=32)
     analyseur.add_argument("--par-intention", type=int, default=800)
-    analyseur.add_argument("--taille-de-lot", type=int, default=32)
-    analyseur.add_argument("--taux", type=float, default=3e-4)
-    analyseur.add_argument("--dimension", type=int, default=256)
-    analyseur.add_argument("--couches", type=int, default=4)
     analyseur.add_argument("--graine", type=int, default=20260812)
     analyseur.add_argument("--destination", type=Path, default=DESTINATION_PAR_DEFAUT)
-    analyseur.add_argument(
-        "--detaille",
-        action="store_true",
-        help="Affiche l'avancement lot par lot.",
-    )
+    analyseur.add_argument("--detaille", action="store_true")
     return analyseur
 
 
 def executer(arguments: argparse.Namespace) -> int:
-    """Conduit l'entrainement complet et restitue le code de sortie."""
+    """Conduit la specialisation complete et restitue le code de sortie."""
     entites = relever_les_entites()
-    print(f"\nEntites relevees: {', '.join(f'{len(v)} {c}' for c, v in entites.items())}")
+    print(
+        f"\nEntites relevees: "
+        f"{', '.join(f'{len(v)} {c}' for c, v in entites.items())}"
+    )
 
     corpus = GenerateurDeCorpus(entites, graine=arguments.graine).engendrer(
         par_intention=arguments.par_intention
@@ -131,41 +126,34 @@ def executer(arguments: argparse.Namespace) -> int:
     mesures_du_corpus = verifier(corpus)
     print(f"Corpus: {mesures_du_corpus}")
 
-    vocabulaire = construire_vocabulaire(
-        enonce.jetons for enonce in corpus.entrainement
-    )
-    tokeniseur = Tokeniseur(vocabulaire)
-    print(f"Vocabulaire: {len(vocabulaire)} jetons")
+    tokeniseur = TokeniseurAligne(arguments.encodeur, arguments.longueur)
+    print(f"Encodeur: {arguments.encodeur}, {tokeniseur.taille} sous-unites")
 
-    configuration = ConfigurationDuModele(
-        taille_du_vocabulaire=len(vocabulaire),
+    configuration = ConfigurationPreentrainee(
         nombre_d_intentions=len(Intention),
         nombre_d_etiquettes=len(indices_des_etiquettes()),
-        dimension=arguments.dimension,
-        nombre_de_couches=arguments.couches,
-        indice_de_remplissage=tokeniseur.indice_de_remplissage,
+        encodeur=arguments.encodeur,
+        longueur_maximale=arguments.longueur,
+        couches_gelees=arguments.couches_gelees,
     )
 
-    print(f"\nEntrainement sur {arguments.epoques} epoques au plus...\n")
-    modele, historique = entrainer(
+    print(f"\nSpecialisation sur {arguments.epoques} epoques au plus...\n")
+    modele, historique = specialiser(
         corpus,
         tokeniseur,
         configuration,
-        ConfigurationDEntrainement(
+        ConfigurationDeSpecialisation(
             epoques=arguments.epoques,
             taille_de_lot=arguments.taille_de_lot,
-            taux_d_apprentissage=arguments.taux,
             graine=arguments.graine,
         ),
         destination=arguments.destination,
     )
 
     chargeur = DataLoader(
-        JeuDEnonces(corpus.evaluation, tokeniseur), batch_size=arguments.taille_de_lot
+        JeuSegmente(corpus.evaluation, tokeniseur), batch_size=arguments.taille_de_lot
     )
-    mesures = evaluer(
-        modele, chargeur, PerteConjointe(2.0), list(indices_des_etiquettes())
-    )
+    mesures = evaluer_segmente(modele, chargeur, PerteConjointeAlignee(2.0))
 
     print("\nValidation, formulations connues:")
     print(f"  {historique.meilleures_mesures.resumer()}")
@@ -184,12 +172,18 @@ def executer(arguments: argparse.Namespace) -> int:
     (arguments.destination / "evaluation.json").write_text(
         json.dumps(
             {
+                "encodeur": arguments.encodeur,
+                "couches_gelees": arguments.couches_gelees,
                 "corpus": mesures_du_corpus,
-                "vocabulaire": len(vocabulaire),
                 "parametres": modele.nombre_de_parametres(),
+                "parametres_appris": modele.nombre_de_parametres_appris(),
                 "validation": {
-                    "justesse_d_intention": historique.meilleures_mesures.justesse_d_intention,
-                    "mesure_f1_des_entites": historique.meilleures_mesures.mesure_f1_des_entites,
+                    "justesse_d_intention": (
+                        historique.meilleures_mesures.justesse_d_intention
+                    ),
+                    "mesure_f1_des_entites": (
+                        historique.meilleures_mesures.mesure_f1_des_entites
+                    ),
                     "justesse_complete": historique.meilleures_mesures.justesse_complete,
                 },
                 "evaluation": {

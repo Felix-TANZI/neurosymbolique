@@ -1,0 +1,28 @@
+{
+  "encodeur": "camembert-base",
+  "couches_gelees": 10,
+  "corpus": {
+    "entrainement": 10200,
+    "validation": 1800,
+    "evaluation": 1995,
+    "intentions": 15,
+    "enonces_distincts_entrainement": 9140,
+    "enonces_distincts_validation": 1748,
+    "enonces_distincts_evaluation": 1838
+  },
+  "parametres": 110645022,
+  "parametres_appris": 14789406,
+  "validation": {
+    "justesse_d_intention": 0.9838888888888889,
+    "mesure_f1_des_entites": 0.998641304347826,
+    "justesse_complete": 0.9816666666666667
+  },
+  "evaluation": {
+    "justesse_d_intention": 0.9052631578947369,
+    "precision_des_entites": 0.9864587607714403,
+    "rappel_des_entites": 0.984036021285305,
+    "mesure_f1_des_entites": 0.9852459016393442,
+    "justesse_complete": 0.893734335839599
+  },
+  "graine": 20260812
+}

@@ -522,7 +522,7 @@ PATRONS_EVALUATION: dict[Intention, tuple[str, ...]] = {
         "resonance permanente signalee en {chambre}",
         "la {chambre} subit les nuisances de la rue",
         "conversations audibles depuis la {chambre}",
-        "reclamation acoustique chambre {chambre}",
+        "grief sonore enregistre pour la {chambre}",
         "l'environnement sonore de la {chambre} est intenable",
         "propagation de bruits vers la {chambre}",
         "la {chambre} deplore un tapage continu",
