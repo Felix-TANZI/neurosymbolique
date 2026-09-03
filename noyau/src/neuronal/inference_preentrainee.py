@@ -176,13 +176,27 @@ class InterpretePreentraineDEnonces:
         debut: int,
         fin: int,
     ) -> EntiteExtraite:
-        """Constitue une entite a partir de ses mots."""
-        valeur = (
-            "".join(mots) if all(mot.isdigit() for mot in mots) else " ".join(mots)
+        """Constitue une entite a partir de ses mots.
+
+        Les references sont recollees sans espace: un identifiant segmente en
+        lettres, separateurs et chiffres doit etre restitue sous la forme que
+        l'etablissement enregistre, faute de quoi la verification symbolique
+        ne trouverait aucune correspondance.
+
+        Les designations composees de mots demeurent espacees: un secteur tel
+        que "etage 3" ou une localisation telle que "sous le lavabo" perdrait
+        son sens une fois recollee.
+        """
+        composee = any(
+            len(mot) > 1 and mot.isalpha() for mot in mots
         )
+        valeur = " ".join(mots) if composee else "".join(mots)
+
         return EntiteExtraite(
             type_d_entite=type_d_entite,
-            valeur=valeur,
+            valeur=valeur.upper() if not composee and any(
+                mot.isalpha() for mot in mots
+            ) else valeur,
             confiance=min(confiances) if confiances else 0.0,
             debut=debut,
             fin=fin,

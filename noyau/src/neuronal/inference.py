@@ -257,17 +257,25 @@ class Interprete:
     ) -> EntiteExtraite:
         """Constitue une entite a partir de ses jetons.
 
-        Les jetons purement numeriques sont recolles sans espace: un numero de
-        chambre segmente en chiffres doit etre restitue sous sa forme d'usage.
+        Les references sont recollees sans espace: un identifiant segmente en
+        lettres, separateurs et chiffres doit etre restitue sous la forme que
+        l'etablissement enregistre, faute de quoi la verification symbolique
+        ne trouverait aucune correspondance.
+
+        Les designations composees de mots demeurent espacees: un secteur tel
+        que "etage 3" ou une localisation telle que "sous le lavabo" perdrait
+        son sens une fois recollee.
         """
-        valeur = (
-            "".join(jetons)
-            if all(jeton.isdigit() for jeton in jetons)
-            else " ".join(jetons)
+        composee = any(
+            len(jeton) > 1 and jeton.isalpha() for jeton in jetons
         )
+        valeur = " ".join(jetons) if composee else "".join(jetons)
+
         return EntiteExtraite(
             type_d_entite=type_d_entite,
-            valeur=valeur,
+            valeur=valeur.upper() if not composee and any(
+                jeton.isalpha() for jeton in jetons
+            ) else valeur,
             confiance=min(confiances) if confiances else 0.0,
             debut=debut,
             fin=fin,
