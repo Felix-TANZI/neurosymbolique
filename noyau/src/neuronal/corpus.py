@@ -39,6 +39,17 @@ LOCALISATIONS: tuple[str, ...] = (
     "pres du radiateur",
 )
 
+ETAGES_EXPRIMES: tuple[str, ...] = ("1", "2", "3", "4", "5", "6")
+
+ETATS_EXPRIMES: tuple[str, ...] = (
+    "libre",
+    "occupee",
+    "propre",
+    "sale",
+    "bloquee",
+    "hors service",
+)
+
 EQUIPEMENTS_EXPRIMES: tuple[str, ...] = (
     "lit double",
     "lit king",
@@ -252,6 +263,10 @@ class GenerateurDeCorpus:
             return self._sort.choice(EQUIPEMENTS_EXPRIMES)
         if type_entite == TypeDEntite.HEURE.value:
             return self._sort.choice(HEURES_EXPRIMEES)
+        if type_entite == TypeDEntite.ETAGE.value:
+            return self._sort.choice(ETAGES_EXPRIMES)
+        if type_entite == TypeDEntite.ETAT.value:
+            return self._sort.choice(ETATS_EXPRIMES)
 
         valeurs = self._entites.get(type_entite)
         if not valeurs:

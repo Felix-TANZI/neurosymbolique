@@ -271,3 +271,51 @@ export interface EnonceSoumis {
   enonce: string;
   confiance_minimale?: number | null;
 }
+
+/* Traitement d'incident */
+
+export type TypeIncident =
+  | "degat_des_eaux"
+  | "panne_electrique"
+  | "panne_climatisation"
+  | "panne_plomberie"
+  | "defaut_serrure"
+  | "mobilier_endommage"
+  | "nuisance_sonore"
+  | "risque_securite";
+
+export type Gravite = 1 | 2 | 3 | 4;
+
+export interface IncidentSignale {
+  chambre: string;
+  type_incident: TypeIncident;
+  gravite?: Gravite;
+  description?: string;
+  jour?: string | null;
+  temps_maximal?: number | null;
+}
+
+export interface RelogementPropose {
+  reservation: string;
+  client: string;
+  arrivee: string;
+  depart: string;
+  nombre_personnes: number;
+  chambre_proposee: string | null;
+  a_trouve_une_chambre: boolean;
+  justification: string;
+  chambres_examinees: number;
+  chambres_admissibles: number;
+  motifs_dominants: string[];
+}
+
+export interface ConsequencesRestituees {
+  chambre: string;
+  immobilise_la_chambre: boolean;
+  justification: string[];
+  sejours_a_reloger: RelogementPropose[];
+  nombre_de_sejours: number;
+  sejours_sans_solution: number;
+  est_entierement_resolu: boolean;
+  demande_une_intervention: boolean;
+}

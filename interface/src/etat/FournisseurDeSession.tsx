@@ -6,24 +6,24 @@ import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import {
   ContexteSession,
-  SESSION_INITIALE,
-  type Session,
+  TRAITEMENT_INITIAL,
+  type Traitement,
 } from "./situation";
 
 export function FournisseurDeSession({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session>(SESSION_INITIALE);
+  const [traitement, setTraitement] = useState<Traitement>(TRAITEMENT_INITIAL);
 
-  const definir = useCallback((modification: Partial<Session>) => {
-    setSession((precedente) => ({ ...precedente, ...modification }));
+  const definir = useCallback((modification: Partial<Traitement>) => {
+    setTraitement((precedent) => ({ ...precedent, ...modification }));
   }, []);
 
   const reinitialiser = useCallback(() => {
-    setSession(SESSION_INITIALE);
+    setTraitement(TRAITEMENT_INITIAL);
   }, []);
 
   const valeur = useMemo(
-    () => ({ session, definir, reinitialiser }),
-    [session, definir, reinitialiser],
+    () => ({ traitement, definir, reinitialiser }),
+    [traitement, definir, reinitialiser],
   );
 
   return (

@@ -34,6 +34,7 @@ from src.orchestration import (
     AffecterChambre,
     ConnaissancesIndisponiblesError,
     PlanifierNettoyage,
+    TraiterUnIncident,
     creer_cas_usage,
     creer_cas_usage_housekeeping,
 )
@@ -67,6 +68,12 @@ def obtenir_cas_usage() -> AffecterChambre:
 def obtenir_cas_usage_housekeeping() -> PlanifierNettoyage:
     """Construit le cas d'usage du service housekeeping une seule fois."""
     return creer_cas_usage_housekeeping(RACINE_CONNAISSANCES)
+
+
+@lru_cache(maxsize=1)
+def obtenir_traitement_d_incident() -> TraiterUnIncident:
+    """Construit le cas d'usage de traitement d'incident une seule fois."""
+    return TraiterUnIncident(obtenir_cas_usage())
 
 
 @lru_cache(maxsize=1)
@@ -120,6 +127,19 @@ def fournir_cas_usage_housekeeping() -> Iterator[PlanifierNettoyage]:
         ) from erreur
 
 
+def fournir_traitement_d_incident() -> Iterator[TraiterUnIncident]:
+    """Fournit le traitement d'incident, en signalant toute indisponibilite."""
+    try:
+        yield obtenir_traitement_d_incident()
+    except ConnaissancesIndisponiblesError as erreur:
+        logger.exception("base de connaissances indisponible")
+        raise _anomalie(
+            "connaissances_indisponibles",
+            str(erreur),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from erreur
+
+
 def fournir_interprete() -> Iterator[InterpretePreentraineDEnonces]:
     """Fournit l'interprete, en signalant toute indisponibilite."""
     try:
@@ -163,3 +183,6 @@ InterpreteDEnonces = Annotated[
     InterpretePreentraineDEnonces, Depends(fournir_interprete)
 ]
 SessionDeBase = Annotated[Session, Depends(fournir_session)]
+TraitementDIncident = Annotated[
+    TraiterUnIncident, Depends(fournir_traitement_d_incident)
+]

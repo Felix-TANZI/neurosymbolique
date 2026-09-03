@@ -40,6 +40,19 @@ class Intention(StrEnum):
     AGENT_INDISPONIBLE = "agent_indisponible"
     DEMANDE_PLANIFICATION = "demande_planification"
 
+    CONSULTER_PARC = "consulter_parc"
+    CONSULTER_DISPONIBILITE = "consulter_disponibilite"
+    CONSULTER_INDISPONIBLES = "consulter_indisponibles"
+    CONSULTER_ARRIVEES = "consulter_arrivees"
+    CONSULTER_AGENTS = "consulter_agents"
+    CONSULTER_TACHES = "consulter_taches"
+    CONSULTER_CHAMBRE = "consulter_chambre"
+    CONSULTER_SEJOUR = "consulter_sejour"
+
+    CONFLIT_AFFECTATION = "conflit_affectation"
+    SUR_OCCUPATION = "sur_occupation"
+    DEMANDE_CONSEIL = "demande_conseil"
+
 
 @unique
 class TypeDEntite(StrEnum):
@@ -52,6 +65,8 @@ class TypeDEntite(StrEnum):
     HEURE = "heure"
     EQUIPEMENT = "equipement"
     LOCALISATION = "localisation"
+    ETAGE = "etage"
+    ETAT = "etat"
 
 
 ETIQUETTE_HORS_ENTITE = "O"
@@ -139,4 +154,52 @@ ENTITES_ATTENDUES: dict[Intention, frozenset[TypeDEntite]] = {
         {TypeDEntite.AGENT, TypeDEntite.SECTEUR}
     ),
     Intention.DEMANDE_PLANIFICATION: frozenset({TypeDEntite.SECTEUR}),
+    Intention.CONSULTER_PARC: frozenset(),
+    Intention.CONSULTER_DISPONIBILITE: frozenset({TypeDEntite.ETAGE}),
+    Intention.CONSULTER_INDISPONIBLES: frozenset({TypeDEntite.ETAGE}),
+    Intention.CONSULTER_ARRIVEES: frozenset({TypeDEntite.HEURE}),
+    Intention.CONSULTER_AGENTS: frozenset({TypeDEntite.SECTEUR}),
+    Intention.CONSULTER_TACHES: frozenset({TypeDEntite.SECTEUR}),
+    Intention.CONSULTER_CHAMBRE: frozenset({TypeDEntite.CHAMBRE}),
+    Intention.CONSULTER_SEJOUR: frozenset({TypeDEntite.RESERVATION}),
+    Intention.CONFLIT_AFFECTATION: frozenset(
+        {TypeDEntite.CHAMBRE, TypeDEntite.RESERVATION}
+    ),
+    Intention.SUR_OCCUPATION: frozenset({TypeDEntite.HEURE}),
+    Intention.DEMANDE_CONSEIL: frozenset(),
 }
+
+
+INTENTIONS_DE_CONSULTATION: frozenset[Intention] = frozenset(
+    {
+        Intention.CONSULTER_PARC,
+        Intention.CONSULTER_DISPONIBILITE,
+        Intention.CONSULTER_INDISPONIBLES,
+        Intention.CONSULTER_ARRIVEES,
+        Intention.CONSULTER_AGENTS,
+        Intention.CONSULTER_TACHES,
+        Intention.CONSULTER_CHAMBRE,
+        Intention.CONSULTER_SEJOUR,
+    }
+)
+
+INTENTIONS_D_ARBITRAGE: frozenset[Intention] = frozenset(
+    {
+        Intention.CONFLIT_AFFECTATION,
+        Intention.SUR_OCCUPATION,
+        Intention.DEMANDE_CONSEIL,
+        Intention.DEMANDE_AFFECTATION,
+        Intention.DEMANDE_CHANGEMENT,
+    }
+)
+
+
+def appelle_un_raisonnement(intention: Intention) -> bool:
+    """Etablit si une intention engage le moteur de raisonnement.
+
+    Une consultation restitue un etat: elle interroge la base et repond. Un
+    arbitrage etablit une decision: il mobilise les regles, produit des options
+    admissibles et une justification. La distinction determine le traitement
+    applique et ce qui est presente au responsable.
+    """
+    return intention not in INTENTIONS_DE_CONSULTATION

@@ -7,14 +7,7 @@
  */
 
 import { NavLink } from "react-router-dom";
-import {
-  ClipboardList,
-  FileText,
-  LayoutGrid,
-  ListChecks,
-  Settings,
-  Sparkles,
-} from "lucide-react";
+import { FileText, LayoutGrid, Sparkles } from "lucide-react";
 import type { ComponentType } from "react";
 
 interface Entree {
@@ -24,12 +17,9 @@ interface Entree {
 }
 
 const ENTREES: Entree[] = [
-  { chemin: "/", libelle: "Tableau de bord", Icone: LayoutGrid },
-  { chemin: "/analyse", libelle: "Analyse", Icone: Sparkles },
-  { chemin: "/recommandations", libelle: "Recommandations", Icone: ListChecks },
-  { chemin: "/validation", libelle: "Validation", Icone: ClipboardList },
+  { chemin: "/", libelle: "Aujourd'hui", Icone: LayoutGrid },
+  { chemin: "/traiter", libelle: "Traiter", Icone: Sparkles },
   { chemin: "/historique", libelle: "Historique", Icone: FileText },
-  { chemin: "/administration", libelle: "Regles", Icone: Settings },
 ];
 
 export function Capsule() {

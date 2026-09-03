@@ -10,11 +10,13 @@ import type {
   AgentConsulte,
   Anomalie,
   ChambreConsultee,
+  ConsequencesRestituees,
   DemandeAffectation,
   DemandePlanification,
   EnonceSoumis,
   EtatDeLEtablissement,
   IncidentConsulte,
+  IncidentSignale,
   LectureRestituee,
   ParametresDeDecision,
   Planification,
@@ -194,4 +196,13 @@ export function interpreterEnonce(
   return envoyer<EnonceSoumis, LectureRestituee>("/interpretations", {
     enonce,
   });
+}
+
+export function signalerUnIncident(
+  signalement: IncidentSignale,
+): Promise<ConsequencesRestituees> {
+  return envoyer<IncidentSignale, ConsequencesRestituees>(
+    "/incidents",
+    signalement,
+  );
 }

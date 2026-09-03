@@ -21,6 +21,7 @@ from src.api.dependances import (
     CasUsageHousekeeping,
     InterpreteDEnonces,
     SessionDeBase,
+    TraitementDIncident,
     obtenir_cas_usage,
 )
 from src.api.schemas import (
@@ -47,6 +48,7 @@ from src.api.schemas_housekeeping import (
     PlanificationSortante,
     TacheEnAttenteSortante,
 )
+from src.api.schemas_incident import ConsequencesRestituees, IncidentSignale
 from src.api.schemas_interpretation import EnonceSoumis, LectureRestituee
 from src.domaine import Periode
 from src.donnees import (
@@ -71,6 +73,7 @@ from src.orchestration import (
     PlanificationProposee,
     PlanifierNettoyage,
     Recommandation,
+    SignalementDIncident,
     SituationIncompleteError,
     composer_affectation,
     composer_planification,
@@ -381,6 +384,49 @@ def creer_application() -> FastAPI:
             verifiee.recevabilite,
         )
         return LectureRestituee.depuis(verifiee, "camembert-base specialise")
+
+    @application.post(
+        "/incidents",
+        response_model=ConsequencesRestituees,
+        summary="Traiter un incident et ses consequences",
+        tags=["incidents"],
+        responses={
+            404: {"description": "Chambre absente de l'etablissement"},
+            500: {"description": "Defaillance du raisonnement"},
+        },
+    )
+    def signaler_un_incident(
+        signalement: IncidentSignale,
+        traitement: TraitementDIncident,
+        session: SessionDeBase,
+    ) -> ConsequencesRestituees:
+        """Etablit les consequences d'un incident sur l'exploitation.
+
+        La chambre devient indisponible si la nature et la gravite de
+        l'incident le justifient; les sejours qu'elle heberge recoivent alors
+        chacun une proposition de relogement.
+
+        Rien n'est applique: l'ensemble demeure suspendu a la validation d'un
+        responsable.
+        """
+        try:
+            consequences = traitement.executer(
+                session,
+                SignalementDIncident(
+                    chambre=signalement.chambre,
+                    type_incident=signalement.type_incident,
+                    gravite=signalement.gravite,
+                    description=signalement.description,
+                    jour=signalement.jour or date.today(),
+                ),
+                signalement.temps_maximal,
+            )
+        except SituationIncompleteError as erreur:
+            raise _anomalie(
+                "situation_incomplete", str(erreur), status.HTTP_404_NOT_FOUND
+            ) from erreur
+
+        return ConsequencesRestituees.depuis(consequences)
 
     return application
 
