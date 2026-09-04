@@ -319,3 +319,53 @@ export interface ConsequencesRestituees {
   est_entierement_resolu: boolean;
   demande_une_intervention: boolean;
 }
+
+/* Demandes en langue naturelle */
+
+export type NatureDeLaReponse =
+  | "consultation"
+  | "arbitrage"
+  | "consequences"
+  | "confirmation_requise"
+  | "hors_perimetre";
+
+export interface DemandeSoumise {
+  enonce: string;
+  jour?: string | null;
+  temps_maximal?: number | null;
+}
+
+export interface EtatRestitue {
+  enonce: string;
+  elements: string[];
+  nombre: number | null;
+}
+
+export interface LevierRestitue {
+  relachement: string;
+  enonce: string;
+  chambres_ainsi_ouvertes: number;
+}
+
+export interface ArbitrageRestitue {
+  nature: string;
+  chambre: string;
+  sejour_maintenu: string | null;
+  sejour_a_reloger: string | null;
+  motif: string;
+  chambre_proposee: string | null;
+  justification: string;
+  constats: string[];
+  leviers: LevierRestitue[];
+  anomalie: boolean;
+  demande_une_intervention: boolean;
+}
+
+export interface ReponseRestituee {
+  nature: NatureDeLaReponse;
+  lecture: LectureRestituee;
+  etat: EtatRestitue | null;
+  arbitrage: ArbitrageRestitue | null;
+  consequences: ConsequencesRestituees | null;
+  message: string;
+}

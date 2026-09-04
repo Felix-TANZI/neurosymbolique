@@ -13,7 +13,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { CornerDownLeft, RefreshCw } from "lucide-react";
-import { ErreurDeNoyau, interpreterEnonce } from "@/api/client";
+import { ErreurDeNoyau, soumettreUneDemande } from "@/api/client";
 import type { LectureRestituee } from "@/api/contrat";
 import { EnTeteDeSection, Panneau } from "@/composants/Panneau";
 import { Pastille } from "@/composants/Pastille";
@@ -27,7 +27,8 @@ export function SaisieLibre({ surConfirmation }: Proprietes) {
   const [enonce, setEnonce] = useState("");
 
   const interpretation = useMutation({
-    mutationFn: (texte: string) => interpreterEnonce(texte),
+    mutationFn: (texte: string) =>
+      soumettreUneDemande(texte).then((reponse) => reponse.lecture),
   });
 
   const soumettre = () => {

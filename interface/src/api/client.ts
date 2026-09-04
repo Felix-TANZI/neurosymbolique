@@ -10,17 +10,15 @@ import type {
   AgentConsulte,
   Anomalie,
   ChambreConsultee,
-  ConsequencesRestituees,
   DemandeAffectation,
   DemandePlanification,
-  EnonceSoumis,
+  DemandeSoumise,
   EtatDeLEtablissement,
   IncidentConsulte,
-  IncidentSignale,
-  LectureRestituee,
   ParametresDeDecision,
   Planification,
   Recommandation,
+  ReponseRestituee,
   ReservationConsultee,
   TacheConsultee,
 } from "./contrat";
@@ -190,19 +188,13 @@ export function planifierNettoyage(
   );
 }
 
-export function interpreterEnonce(
+export function soumettreUneDemande(
   enonce: string,
-): Promise<LectureRestituee> {
-  return envoyer<EnonceSoumis, LectureRestituee>("/interpretations", {
+  jour?: string,
+): Promise<ReponseRestituee> {
+  return envoyer<DemandeSoumise, ReponseRestituee>("/demandes", {
     enonce,
+    jour: jour ?? null,
+    temps_maximal: 20,
   });
-}
-
-export function signalerUnIncident(
-  signalement: IncidentSignale,
-): Promise<ConsequencesRestituees> {
-  return envoyer<IncidentSignale, ConsequencesRestituees>(
-    "/incidents",
-    signalement,
-  );
 }

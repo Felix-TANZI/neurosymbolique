@@ -16,7 +16,9 @@ from fastapi import FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
+from src.api.aiguillage import aiguiller
 from src.api.dependances import (
+    Arbitrage,
     CasUsage,
     CasUsageHousekeeping,
     InterpreteDEnonces,
@@ -49,7 +51,7 @@ from src.api.schemas_housekeeping import (
     TacheEnAttenteSortante,
 )
 from src.api.schemas_incident import ConsequencesRestituees, IncidentSignale
-from src.api.schemas_interpretation import EnonceSoumis, LectureRestituee
+from src.api.schemas_reponse import DemandeSoumise, ReponseRestituee
 from src.domaine import Periode
 from src.donnees import (
     DepotAgents,
@@ -353,37 +355,50 @@ def creer_application() -> FastAPI:
         )
 
     @application.post(
-        "/interpretations",
-        response_model=LectureRestituee,
-        summary="Interpreter un enonce libre",
-        tags=["interpretation"],
+        "/demandes",
+        response_model=ReponseRestituee,
+        summary="Soumettre une demande en langue naturelle",
+        tags=["demandes"],
         responses={
             422: {"description": "Enonce vide ou trop long"},
             503: {"description": "Modele d'interpretation indisponible"},
         },
     )
-    def interpreter(
-        soumission: EnonceSoumis,
+    def soumettre_une_demande(
+        demande: DemandeSoumise,
         interprete: InterpreteDEnonces,
+        traitement: TraitementDIncident,
+        arbitrage: Arbitrage,
         session: SessionDeBase,
-    ) -> LectureRestituee:
-        """Etablit ce qu'un enonce exprime, sans engager aucune action.
+    ) -> ReponseRestituee:
+        """Interprete une demande et conduit le traitement qu'elle appelle.
 
-        Les entites reconnues sont confrontees aux references de
-        l'etablissement: une lecture plausible mais sans correspondance reelle
-        est signalee plutot qu'exploitee. Une lecture dont la confiance est
-        insuffisante ou dont une entite demeure incertaine appelle une
-        confirmation avant que le raisonnement ne s'engage.
+        Une consultation restitue un etat. Un incident etablit ses
+        consequences. Un conflit appelle un arbitrage. Aucun traitement n'est
+        engage sur une lecture demeurant sous reserve.
         """
-        lecture = interprete.interpreter(soumission.enonce)
-        verifiee = verifier_les_entites(lecture, _referentiel(session))
-        logger.info(
-            "enonce interprete: %s, confiance %.2f, %s",
-            verifiee.intention or "aucune",
-            verifiee.confiance_d_intention,
-            verifiee.recevabilite,
+        jour = (
+            date.fromisoformat(demande.jour) if demande.jour else date.today()
         )
-        return LectureRestituee.depuis(verifiee, "camembert-base specialise")
+        lecture = verifier_les_entites(
+            interprete.interpreter(demande.enonce), _referentiel(session)
+        )
+
+        reponse = aiguiller(
+            session,
+            lecture,
+            traitement,
+            arbitrage,
+            jour,
+            "camembert-base specialise",
+            demande.temps_maximal,
+        )
+        logger.info(
+            "demande traitee: %s -> %s",
+            lecture.intention or "aucune",
+            reponse.nature,
+        )
+        return reponse
 
     @application.post(
         "/incidents",

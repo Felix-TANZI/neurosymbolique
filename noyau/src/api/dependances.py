@@ -38,6 +38,7 @@ from src.orchestration import (
     creer_cas_usage,
     creer_cas_usage_housekeeping,
 )
+from src.orchestration.arbitrage import ArbitrerUnConflit
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,12 @@ def obtenir_cas_usage_housekeeping() -> PlanifierNettoyage:
 def obtenir_traitement_d_incident() -> TraiterUnIncident:
     """Construit le cas d'usage de traitement d'incident une seule fois."""
     return TraiterUnIncident(obtenir_cas_usage())
+
+
+@lru_cache(maxsize=1)
+def obtenir_arbitrage() -> ArbitrerUnConflit:
+    """Construit le cas d'usage d'arbitrage une seule fois."""
+    return ArbitrerUnConflit(obtenir_cas_usage())
 
 
 @lru_cache(maxsize=1)
@@ -140,6 +147,19 @@ def fournir_traitement_d_incident() -> Iterator[TraiterUnIncident]:
         ) from erreur
 
 
+def fournir_arbitrage() -> Iterator[ArbitrerUnConflit]:
+    """Fournit l'arbitrage, en signalant toute indisponibilite."""
+    try:
+        yield obtenir_arbitrage()
+    except ConnaissancesIndisponiblesError as erreur:
+        logger.exception("base de connaissances indisponible")
+        raise _anomalie(
+            "connaissances_indisponibles",
+            str(erreur),
+            status.HTTP_503_SERVICE_UNAVAILABLE,
+        ) from erreur
+
+
 def fournir_interprete() -> Iterator[InterpretePreentraineDEnonces]:
     """Fournit l'interprete, en signalant toute indisponibilite."""
     try:
@@ -175,6 +195,7 @@ def fournir_session() -> Iterator[Session]:
         ) from erreur
 
 
+Arbitrage = Annotated[ArbitrerUnConflit, Depends(fournir_arbitrage)]
 CasUsage = Annotated[AffecterChambre, Depends(fournir_cas_usage)]
 CasUsageHousekeeping = Annotated[
     PlanifierNettoyage, Depends(fournir_cas_usage_housekeeping)

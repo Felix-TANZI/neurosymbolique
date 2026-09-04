@@ -6,49 +6,25 @@
  * confirmation avant d'engager quoi que ce soit.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CornerDownLeft, RefreshCw } from "lucide-react";
 import { ErreurDeNoyau } from "@/api/client";
-import type { LectureRestituee } from "@/api/contrat";
 import { EnTeteDeSection, Panneau } from "@/composants/Panneau";
-import { LectureProposee } from "./LectureProposee";
 
 const EXEMPLES: string[] = [
+  "quelles chambres sont disponibles",
   "il y a une fuite dans la 319",
-  "la clim de la 405 ne marche plus",
-  "le client de la 610 est bloque dehors",
+  "quel est l'etat de la 312",
 ];
 
 interface Proprietes {
-  referenceInitiale: string | null;
-  lecture: LectureRestituee | null;
-  enLecture: boolean;
-  enTraitement: boolean;
+  enCours: boolean;
   anomalie: unknown;
-  surSoumission: (texte: string) => void;
-  surConfirmation: (lecture: LectureRestituee) => void;
-  surAbandon: () => void;
-  surReference: (reference: string) => void;
+  surSoumission: (enonce: string) => void;
 }
 
-export function Decrire({
-  referenceInitiale,
-  lecture,
-  enLecture,
-  enTraitement,
-  anomalie,
-  surSoumission,
-  surConfirmation,
-  surAbandon,
-  surReference,
-}: Proprietes) {
+export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
   const [enonce, setEnonce] = useState("");
-
-  useEffect(() => {
-    if (referenceInitiale) {
-      surReference(referenceInitiale);
-    }
-  }, [referenceInitiale, surReference]);
 
   const soumettre = () => {
     const texte = enonce.trim();
@@ -82,17 +58,17 @@ export function Decrire({
               }
             }}
             placeholder="il y a une fuite dans la 319"
-            disabled={enLecture || enTraitement}
+            disabled={enCours}
             aria-label="Description de la situation"
             className="flex-1 rounded-[var(--radius-carte)] border border-bordure bg-creme px-4 py-3.5 text-base outline-none placeholder:text-service/50 focus:border-encre disabled:opacity-60"
           />
           <button
             type="button"
             onClick={soumettre}
-            disabled={enLecture || enTraitement || !enonce.trim()}
+            disabled={enCours || !enonce.trim()}
             className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-encre px-6 py-3.5 text-sm font-medium text-creme transition-opacity hover:opacity-90 disabled:opacity-40"
           >
-            {enLecture ? (
+            {enCours ? (
               <>
                 <RefreshCw size={16} className="animate-spin" />
                 Lecture
@@ -106,7 +82,7 @@ export function Decrire({
           </button>
         </div>
 
-        {!lecture && !enLecture ? (
+        {!enCours ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm text-service">Par exemple :</span>
             {EXEMPLES.map((exemple) => (
@@ -126,15 +102,6 @@ export function Decrire({
         ) : null}
 
         {anomalie ? <Anomalie erreur={anomalie} /> : null}
-
-        {lecture ? (
-          <LectureProposee
-            lecture={lecture}
-            enTraitement={enTraitement}
-            surConfirmation={() => surConfirmation(lecture)}
-            surAbandon={surAbandon}
-          />
-        ) : null}
       </div>
     </Panneau>
   );
