@@ -29,6 +29,14 @@ from .etats_housekeeping import (
     StatutTache,
     TypePrestation,
 )
+from .preferences import (
+    NatureDeLaPreference,
+    Preference,
+    Preferences,
+    distance_entre,
+    etage_de,
+    sont_voisines,
+)
 from .valeurs import (
     Exigence,
     HeureArrivee,
@@ -56,9 +64,12 @@ __all__ = [
     "IdentifiantAgent",
     "IdentifiantReservation",
     "Incident",
+    "NatureDeLaPreference",
     "NumeroChambre",
     "Periode",
     "PlageDeService",
+    "Preference",
+    "Preferences",
     "PrioriteTache",
     "Reservation",
     "Secteur",
@@ -69,4 +80,7 @@ __all__ = [
     "TypeIncident",
     "TypePrestation",
     "ValeurInvalideError",
+    "distance_entre",
+    "etage_de",
+    "sont_voisines",
 ]

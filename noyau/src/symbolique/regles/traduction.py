@@ -8,7 +8,7 @@ fichiers de connaissances, editables sans modification du code.
 from collections.abc import Iterable, Sequence
 from datetime import date
 
-from src.domaine import Chambre, Reservation
+from src.domaine import Chambre, Preferences, Reservation
 
 PREFIXE_CHAMBRE = "c"
 PREFIXE_RESERVATION = "r"
@@ -130,26 +130,44 @@ def traduire_situation(
     occupations: Iterable[Reservation] = (),
     poids: dict[str, int] | None = None,
     jour: date | None = None,
+    preferences: Preferences | None = None,
 ) -> str:
-    """Assemble le programme logique decrivant une situation complete.
+    """Assemble le programme logique decrivant une situation.
+
+    Les preferences exprimees modifient le bareme et engendrent les faits qui
+    permettent de les evaluer. Une preference absente laisse le bareme par
+    defaut inchange, de sorte qu'une demande sans souhait particulier se
+    comporte comme auparavant.
 
     Le jour de reference determine si les etats instantanes du parc sont
     opposables: ils ne le sont que pour une arrivee imminente, une chambre
     sale ou occupee ce jour ne l'etant plus a une date ulterieure.
     """
+    # Import differe: traduction_preferences depend des identifiants definis
+    # ici, et un import en tete du module formerait un cycle a l'initialisation.
+    from .traduction_preferences import poids_ajustes, traduire_preferences
+
+    parc = list(chambres)
+    presentes = list(occupations)
+    exprimees = preferences or Preferences()
+
     lignes: list[str] = []
 
-    for chambre in chambres:
+    for chambre in sorted(parc, key=lambda c: str(c.numero)):
         lignes.extend(traduire_chambre(chambre))
 
     lignes.extend(traduire_reservation(reservation_a_affecter, a_affecter=True))
 
-    presentes = list(occupations)
     for occupation in presentes:
         lignes.extend(traduire_reservation(occupation, a_affecter=False))
 
     lignes.extend(traduire_chevauchements([reservation_a_affecter, *presentes]))
-    lignes.extend(traduire_poids(poids or POIDS_PAR_DEFAUT))
+    lignes.extend(
+        traduire_preferences(parc, reservation_a_affecter, exprimees)
+    )
+    lignes.extend(
+        traduire_poids(poids_ajustes(poids or POIDS_PAR_DEFAUT, exprimees))
+    )
 
     if _est_imminente(reservation_a_affecter, jour):
         lignes.append("imminent.")

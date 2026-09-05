@@ -31,6 +31,9 @@ souhait_non_satisfait = "Une preference exprimee n'est pas satisfaite par la cha
 surclassement = "La chambre retenue est d'une categorie superieure a celle due, ce qui represente un manque a gagner."
 hors_secteur = "La chambre retenue se situe hors du secteur de nettoyage courant."
 etage_non_souhaite = "L'etage obtenu differe de celui souhaite."
+proximite = "Elle s'eloigne de la chambre demandee, alors qu'une chambre voisine etait souhaitee."
+eloignement = "Elle demeure proche de la chambre a eviter, alors qu'un eloignement etait souhaite."
+hors_de_portee = "Elle se trouve a un autre etage que la chambre demandee, ce qui ne satisfait pas le souhait de proximite."
 
 [regroupement]
 # Variables: nombre, motif

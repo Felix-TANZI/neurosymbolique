@@ -13,7 +13,7 @@ from datetime import date
 from pathlib import Path
 from typing import Final
 
-from src.domaine import Chambre, Reservation
+from src.domaine import Chambre, Preferences, Reservation
 from src.gouvernance import (
     CatalogueInvalideError,
     GabaritIntrouvableError,
@@ -60,6 +60,7 @@ class Demande:
     occupations: tuple[Reservation, ...] = ()
     poids: dict[str, int] | None = None
     jour: date | None = None
+    preferences: Preferences = field(default_factory=Preferences)
 
     def __post_init__(self) -> None:
         if not self.parc:
@@ -164,6 +165,7 @@ class AffecterChambre:
             demande.occupations,
             demande.poids,
             demande.jour,
+            demande.preferences,
         )
 
         resultat = self._raisonner(situation, temps_maximal)
@@ -234,6 +236,7 @@ def demande_depuis(
     occupations: Sequence[Reservation] = (),
     poids: dict[str, int] | None = None,
     jour: date | None = None,
+    preferences: Preferences | None = None,
 ) -> Demande:
     """Construit une demande a partir de sequences quelconques."""
     return Demande(
@@ -242,4 +245,5 @@ def demande_depuis(
         occupations=tuple(occupations),
         poids=poids,
         jour=jour,
+        preferences=preferences or Preferences(),
     )

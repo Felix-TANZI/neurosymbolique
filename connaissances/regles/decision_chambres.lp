@@ -17,6 +17,7 @@
 #defined secteur/2.
 #defined etage_souhaite/2.
 #defined imminent/0.
+#defined distance/2.
 
 % ---------------------------------------------------------------------
 % Espace des affectations possibles
@@ -109,6 +110,43 @@ penalite(R, etage_non_souhaite, Poids) :-
     etage_souhaite(R, EtageVoulu),
     etage(C, EtageObtenu), EtageObtenu != EtageVoulu,
     poids(etage_non_souhaite, Poids).
+
+% Preferences exprimees sur l'affectation.
+%
+% Une preference oriente le choix sans le contraindre: elle penalise les
+% chambres qui la satisfont mal, sans en ecarter aucune. Une chambre eloignee
+% demeure attribuable lorsque aucune autre ne convient, ce qui distingue le
+% souhait de l'exigence.
+%
+% Les faits que ces regles exploitent proviennent de la demande exprimee par
+% le responsable: c'est sa formulation qui determine le critere, et non un
+% reglage etabli une fois pour toutes.
+
+penalite(R, proximite, Poids) :-
+    affectation(R, C),
+    distance(C, D),
+    poids(proximite, PoidsUnitaire),
+    Poids = PoidsUnitaire * D.
+
+penalite(R, eloignement, Poids) :-
+    affectation(R, C),
+    distance(C, D),
+    poids(eloignement, PoidsUnitaire),
+    D <= 12,
+    Poids = PoidsUnitaire * (12 - D).
+
+% Une chambre pour laquelle aucune distance n'est etablie ne satisfait pas la
+% preference de proximite: elle se situe a un autre etage, ou hors du seuil
+% retenu. La penalite maximale lui est appliquee, faute de quoi l'absence meme
+% du fait qui la mesure l'avantagerait sur une chambre voisine penalisee.
+
+mesuree(C) :- distance(C, _).
+
+penalite(R, hors_de_portee, Poids) :-
+    affectation(R, C),
+    poids(proximite, PoidsUnitaire),
+    not mesuree(C),
+    Poids = PoidsUnitaire * 13.
 
 #minimize { P, R, Motif : penalite(R, Motif, P) }.
 
