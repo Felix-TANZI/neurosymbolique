@@ -26,6 +26,7 @@ from .incident import (
     TraiterUnIncident,
     etat_technique_apres,
 )
+from .options import Eventail, Option, ProposerDesOptions
 from .planification import (
     ConnaissancesHousekeeping,
     DemandePlanification,
@@ -45,9 +46,12 @@ __all__ = [
     "Demande",
     "DemandePlanification",
     "DemandeInvalideError",
+    "Eventail",
+    "Option",
     "OptionEcartee",
     "PlanificationProposee",
     "PlanifierNettoyage",
+    "ProposerDesOptions",
     "Recommandation",
     "SejourARelogerr",
     "SignalementDIncident",
