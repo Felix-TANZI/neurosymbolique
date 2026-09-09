@@ -37,6 +37,7 @@ from .modele import (
     SortieDuModele,
     creer_modele,
 )
+from .preferences_lues import chambre_concernee, relever_les_preferences
 from .taxonomie import (
     ENTITES_ATTENDUES,
     ETIQUETTE_HORS_ENTITE,
@@ -82,6 +83,7 @@ __all__ = [
     "Tokeniseur",
     "TypeDEntite",
     "VocabulaireInvalideError",
+    "chambre_concernee",
     "charger",
     "construire_vocabulaire",
     "creer_modele",
@@ -92,6 +94,7 @@ __all__ = [
     "indices_des_etiquettes",
     "indices_des_intentions",
     "referentiel_depuis",
+    "relever_les_preferences",
     "resumer",
     "segmenter",
     "verifier",

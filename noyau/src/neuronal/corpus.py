@@ -267,6 +267,16 @@ class GenerateurDeCorpus:
             return self._sort.choice(ETAGES_EXPRIMES)
         if type_entite == TypeDEntite.ETAT.value:
             return self._sort.choice(ETATS_EXPRIMES)
+        if type_entite in (
+            TypeDEntite.PROXIMITE.value,
+            TypeDEntite.ELOIGNEMENT.value,
+        ):
+            valeurs = self._entites.get(TypeDEntite.CHAMBRE.value)
+            if not valeurs:
+                raise CorpusInvalideError(
+                    f"aucune chambre disponible pour {type_entite}"
+                )
+            return self._sort.choice(list(valeurs))
 
         valeurs = self._entites.get(type_entite)
         if not valeurs:

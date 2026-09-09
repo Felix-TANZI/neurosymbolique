@@ -2,27 +2,27 @@
   "encodeur": "camembert-base",
   "couches_gelees": 10,
   "corpus": {
-    "entrainement": 11050,
-    "validation": 1950,
-    "evaluation": 2158,
-    "intentions": 26,
-    "enonces_distincts_entrainement": 8045,
-    "enonces_distincts_validation": 1605,
-    "enonces_distincts_evaluation": 1644
+    "entrainement": 12325,
+    "validation": 2175,
+    "evaluation": 2407,
+    "intentions": 29,
+    "enonces_distincts_entrainement": 9225,
+    "enonces_distincts_validation": 1832,
+    "enonces_distincts_evaluation": 1876
   },
-  "parametres": 110656557,
-  "parametres_appris": 14800941,
+  "parametres": 110661940,
+  "parametres_appris": 14806324,
   "validation": {
-    "justesse_d_intention": 0.9871794871794872,
-    "mesure_f1_des_entites": 0.995558187740598,
-    "justesse_complete": 0.9830769230769231
+    "justesse_d_intention": 0.9839080459770115,
+    "mesure_f1_des_entites": 0.9936335769865597,
+    "justesse_complete": 0.9774712643678161
   },
   "evaluation": {
-    "justesse_d_intention": 0.917516218721038,
-    "precision_des_entites": 0.9874213836477987,
-    "rappel_des_entites": 0.9781931464174455,
-    "mesure_f1_des_entites": 0.9827856025039124,
-    "justesse_complete": 0.8980537534754403
+    "justesse_d_intention": 0.9077690070627337,
+    "precision_des_entites": 0.9765115267507612,
+    "rappel_des_entites": 0.9589918838103375,
+    "mesure_f1_des_entites": 0.9676724137931035,
+    "justesse_complete": 0.8845035313668467
   },
   "graine": 20260812
 }

@@ -131,11 +131,15 @@ class PerteConjointeAlignee(nn.Module):
         self,
         coefficient_d_etiquetage: float = 1.0,
         lissage_des_etiquettes: float = 0.0,
+        multi_intention: bool = False,
     ) -> None:
         super().__init__()
         self.coefficient = coefficient_d_etiquetage
-        self.entropie_d_intention = nn.CrossEntropyLoss(
-            label_smoothing=lissage_des_etiquettes
+        self.multi_intention = multi_intention
+        self.entropie_d_intention = (
+            nn.BCEWithLogitsLoss()
+            if multi_intention
+            else nn.CrossEntropyLoss(label_smoothing=lissage_des_etiquettes)
         )
         self.entropie_d_etiquetage = nn.CrossEntropyLoss(ignore_index=INDICE_IGNORE)
 
@@ -156,7 +160,8 @@ class PerteConjointeAlignee(nn.Module):
         del masque
 
         perte_intention = self.entropie_d_intention(
-            sortie.scores_d_intention, intentions
+            sortie.scores_d_intention,
+            intentions.float() if self.multi_intention else intentions,
         )
         perte_etiquetage = self.entropie_d_etiquetage(
             sortie.scores_d_etiquettes.reshape(-1, sortie.scores_d_etiquettes.size(-1)),

@@ -32,7 +32,10 @@ class Intention(StrEnum):
     RISQUE_SECURITE = "risque_securite"
 
     DEMANDE_AFFECTATION = "demande_affectation"
+    DEMANDE_AVEC_PREFERENCE = "demande_avec_preference"
     DEMANDE_CHANGEMENT = "demande_changement"
+    INCIDENT_AVEC_PREFERENCE = "incident_avec_preference"
+    CHANGEMENT_AVEC_PREFERENCE = "changement_avec_preference"
     SIGNALEMENT_INDISPONIBILITE = "signalement_indisponibilite"
 
     ARRIVEE_ANTICIPEE = "arrivee_anticipee"
@@ -67,6 +70,8 @@ class TypeDEntite(StrEnum):
     LOCALISATION = "localisation"
     ETAGE = "etage"
     ETAT = "etat"
+    PROXIMITE = "proximite"
+    ELOIGNEMENT = "eloignement"
 
 
 ETIQUETTE_HORS_ENTITE = "O"
@@ -140,8 +145,17 @@ ENTITES_ATTENDUES: dict[Intention, frozenset[TypeDEntite]] = {
     Intention.DEMANDE_AFFECTATION: frozenset(
         {TypeDEntite.RESERVATION, TypeDEntite.EQUIPEMENT}
     ),
+    Intention.DEMANDE_AVEC_PREFERENCE: frozenset(
+        {TypeDEntite.RESERVATION, TypeDEntite.PROXIMITE, TypeDEntite.ETAGE}
+    ),
     Intention.DEMANDE_CHANGEMENT: frozenset(
         {TypeDEntite.RESERVATION, TypeDEntite.CHAMBRE, TypeDEntite.EQUIPEMENT}
+    ),
+    Intention.INCIDENT_AVEC_PREFERENCE: frozenset(
+        {TypeDEntite.CHAMBRE, TypeDEntite.PROXIMITE, TypeDEntite.ETAGE}
+    ),
+    Intention.CHANGEMENT_AVEC_PREFERENCE: frozenset(
+        {TypeDEntite.RESERVATION, TypeDEntite.CHAMBRE, TypeDEntite.PROXIMITE}
     ),
     Intention.SIGNALEMENT_INDISPONIBILITE: frozenset({TypeDEntite.CHAMBRE}),
     Intention.ARRIVEE_ANTICIPEE: frozenset(
@@ -192,6 +206,24 @@ INTENTIONS_D_ARBITRAGE: frozenset[Intention] = frozenset(
         Intention.DEMANDE_CHANGEMENT,
     }
 )
+
+INTENTIONS_AVEC_PREFERENCE: frozenset[Intention] = frozenset(
+    {
+        Intention.DEMANDE_AVEC_PREFERENCE,
+        Intention.INCIDENT_AVEC_PREFERENCE,
+        Intention.CHANGEMENT_AVEC_PREFERENCE,
+    }
+)
+
+
+def exprime_une_preference(intention: Intention) -> bool:
+    """Etablit si une intention porte des preferences a traduire.
+
+    Les preferences ne sont pas extraites de toute intention: les rechercher
+    partout produirait des faux positifs sur des enonces ou un numero de
+    chambre ne designe aucune reference de proximite.
+    """
+    return intention in INTENTIONS_AVEC_PREFERENCE
 
 
 def appelle_un_raisonnement(intention: Intention) -> bool:

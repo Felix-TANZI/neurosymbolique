@@ -2,37 +2,37 @@
   "epoques": [
     {
       "epoque": 1,
-      "perte_entrainement": 2.853492013452367,
-      "perte_validation": 0.8622388468414056,
-      "justesse_d_intention": 0.9594871794871795,
-      "mesure_f1_des_entites": 0.9831010969463385,
-      "justesse_complete": 0.9420512820512821
+      "perte_entrainement": 2.9835091309015542,
+      "perte_validation": 0.9092415759668631,
+      "justesse_d_intention": 0.9581609195402299,
+      "mesure_f1_des_entites": 0.9574065309985801,
+      "justesse_complete": 0.9154022988505747
     },
     {
       "epoque": 2,
-      "perte_entrainement": 0.886827739723857,
-      "perte_validation": 0.7551696769526748,
-      "justesse_d_intention": 0.9851282051282051,
-      "mesure_f1_des_entites": 0.9946682464454977,
-      "justesse_complete": 0.9794871794871794
+      "perte_entrainement": 0.9265008029925375,
+      "perte_validation": 0.7851606059600326,
+      "justesse_d_intention": 0.9793103448275862,
+      "mesure_f1_des_entites": 0.9910335063709297,
+      "justesse_complete": 0.9701149425287356
     },
     {
       "epoque": 3,
-      "perte_entrainement": 0.821552909576427,
-      "perte_validation": 0.7436489223456774,
-      "justesse_d_intention": 0.9871794871794872,
-      "mesure_f1_des_entites": 0.995558187740598,
-      "justesse_complete": 0.9830769230769231
+      "perte_entrainement": 0.849964368358815,
+      "perte_validation": 0.770918637075845,
+      "justesse_d_intention": 0.9839080459770115,
+      "mesure_f1_des_entites": 0.9936335769865597,
+      "justesse_complete": 0.9774712643678161
     }
   ],
   "meilleure_epoque": 3,
   "meilleures_mesures": {
-    "perte": 0.7436489223456774,
-    "justesse_d_intention": 0.9871794871794872,
-    "precision_des_entites": 0.9958530805687204,
-    "rappel_des_entites": 0.9952634695085849,
-    "mesure_f1_des_entites": 0.995558187740598,
-    "justesse_complete": 0.9830769230769231
+    "perte": 0.770918637075845,
+    "justesse_d_intention": 0.9839080459770115,
+    "precision_des_entites": 0.9938679245283019,
+    "rappel_des_entites": 0.9933993399339934,
+    "mesure_f1_des_entites": 0.9936335769865597,
+    "justesse_complete": 0.9774712643678161
   },
-  "duree_secondes": 3057.970758299998
+  "duree_secondes": 4670.494946299994
 }
