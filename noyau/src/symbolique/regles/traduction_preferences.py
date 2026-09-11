@@ -17,6 +17,7 @@ from collections.abc import Mapping, Sequence
 from src.domaine import (
     Chambre,
     NatureDeLaPreference,
+    NumeroChambre,
     Preference,
     Preferences,
     Reservation,
@@ -109,7 +110,7 @@ def _faits_de(
         return _proximite(parc, preference.reference)
 
     if preference.nature == NatureDeLaPreference.MEME_ETAGE.value:
-        return _meme_etage(parc, reservation, preference.reference)
+        return _meme_etage(reservation, preference.reference)
 
     if preference.nature == NatureDeLaPreference.ETAGE_DESIGNE.value:
         return _etage_designe(reservation, preference.reference)
@@ -124,44 +125,43 @@ def _faits_de(
 def _proximite(parc: Sequence[Chambre], reference: str) -> list[str]:
     """Assemble les distances separant chaque chambre d'une reference.
 
+    La reference n'a pas a figurer au parc: une chambre immobilisee en est
+    retiree, et c'est precisement autour d'elle qu'un relogement se cherche.
+    Seule sa numerotation importe, la distance s'en deduisant.
+
     Les distances superieures au seuil retenu ne sont pas produites: au-dela,
     la proximite ne distingue plus utilement deux chambres, et les faits
     correspondants alourdiraient le programme sans profit.
     """
-    designee = next(
-        (chambre for chambre in parc if str(chambre.numero) == reference), None
-    )
-    if designee is None:
-        logger.info("preference de proximite sur une chambre absente: %s", reference)
-        return []
+    designee = NumeroChambre(reference)
 
     lignes: list[str] = []
-
     for chambre in parc:
-        if chambre.numero == designee.numero:
+        if chambre.numero == designee:
             continue
-        distance = distance_entre(chambre.numero, designee.numero)
+        distance = distance_entre(chambre.numero, designee)
         if distance is not None and distance <= DISTANCE_MAXIMALE_RETENUE:
             lignes.append(
                 f"distance({identifiant_chambre(chambre)}, {distance})."
             )
 
+    if not lignes:
+        logger.info(
+            "aucune chambre mesurable a proximite de %s", reference
+        )
     return lignes
 
 
-def _meme_etage(
-    parc: Sequence[Chambre], reservation: Reservation, reference: str
-) -> list[str]:
-    """Assemble les faits designant les chambres d'un meme etage."""
-    designee = next(
-        (chambre for chambre in parc if str(chambre.numero) == reference), None
-    )
-    if designee is None:
-        logger.info("preference d'etage sur une chambre absente: %s", reference)
-        return []
+def _meme_etage(reservation: Reservation, reference: str) -> list[str]:
+    """Assemble les faits designant les chambres d'un meme etage.
 
-    etage = etage_de(designee.numero)
+    L'etage se deduit de la numerotation, sans que la chambre de reference ait
+    a figurer au parc: une chambre immobilisee en est retiree, et c'est autour
+    d'elle que le souhait s'exprime.
+    """
+    etage = etage_de(NumeroChambre(reference))
     if etage is None:
+        logger.info("etage indeterminable pour la reference %s", reference)
         return []
 
     return [

@@ -295,13 +295,13 @@ export interface IncidentSignale {
   temps_maximal?: number | null;
 }
 
-export interface OptionDeRelogement {
+export interface OptionProposee {
   rang: number;
   chambre: string;
   cout: number;
-  justification: string;
   avantages: string[];
   contreparties: string[];
+  convoitee: boolean;
 }
 
 export interface RelogementPropose {
@@ -312,12 +312,12 @@ export interface RelogementPropose {
   nombre_personnes: number;
   chambre_proposee: string | null;
   a_trouve_une_chambre: boolean;
+  options: OptionProposee[];
+  options_equivalentes: boolean;
   justification: string;
   chambres_examinees: number;
   chambres_admissibles: number;
   motifs_dominants: string[];
-  options: OptionDeRelogement[];
-  offre_un_choix: boolean;
 }
 
 export interface ConsequencesRestituees {
@@ -379,4 +379,31 @@ export interface ReponseRestituee {
   arbitrage: ArbitrageRestitue | null;
   consequences: ConsequencesRestituees | null;
   message: string;
+}
+
+/* Journal des decisions */
+
+export type IssueDeDecision = "validee" | "corrigee" | "refusee" | "differee";
+
+export interface DecisionSoumise {
+  service: string;
+  situation: string;
+  proposition: string;
+  justification?: string;
+  issue: IssueDeDecision;
+  valideur?: string;
+  motif?: string;
+}
+
+export interface DecisionConsultee {
+  identifiant: number;
+  horodatage: string;
+  service: string;
+  situation: string;
+  proposition: string;
+  justification: string;
+  issue: IssueDeDecision;
+  motif: string;
+  valideur: string;
+  marque_un_ecart: boolean;
 }

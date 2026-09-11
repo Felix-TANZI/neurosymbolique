@@ -14,7 +14,7 @@ import { EnTeteDeSection, Panneau } from "@/composants/Panneau";
 const EXEMPLES: string[] = [
   "quelles chambres sont disponibles",
   "il y a une fuite dans la 319",
-  "quel est l'etat de la 312",
+  "la 319 a un souci, il me faut une chambre a cote de la 406",
 ];
 
 interface Proprietes {

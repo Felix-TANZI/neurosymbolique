@@ -26,6 +26,13 @@ from .incident import (
     TraiterUnIncident,
     etat_technique_apres,
 )
+from .journal import (
+    ConsignerUneDecision,
+    ConsulterLeJournal,
+    DecisionAConsigner,
+    EntreeDuJournal,
+    SuiteDonnee,
+)
 from .options import Eventail, Option, ProposerDesOptions
 from .planification import (
     ConnaissancesHousekeeping,
@@ -39,13 +46,17 @@ from .planification import (
 
 __all__ = [
     "AffecterChambre",
+    "ConsignerUneDecision",
+    "ConsulterLeJournal",
     "Connaissances",
     "ConnaissancesIndisponiblesError",
     "ConnaissancesHousekeeping",
     "ConsequencesDUnIncident",
+    "DecisionAConsigner",
     "Demande",
     "DemandePlanification",
     "DemandeInvalideError",
+    "EntreeDuJournal",
     "Eventail",
     "Option",
     "OptionEcartee",
@@ -56,6 +67,7 @@ __all__ = [
     "SejourARelogerr",
     "SignalementDIncident",
     "SituationIncompleteError",
+    "SuiteDonnee",
     "TacheNonPlanifiee",
     "TraiterUnIncident",
     "arrivees_a_traiter",

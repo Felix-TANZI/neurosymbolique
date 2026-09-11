@@ -51,6 +51,7 @@ from src.api.schemas_housekeeping import (
     TacheEnAttenteSortante,
 )
 from src.api.schemas_incident import ConsequencesRestituees, IncidentSignale
+from src.api.schemas_journal import DecisionConsultee, DecisionSoumise
 from src.api.schemas_reponse import DemandeSoumise, ReponseRestituee
 from src.domaine import Periode
 from src.donnees import (
@@ -69,6 +70,9 @@ from src.neuronal.inference import (
 )
 from src.orchestration import (
     AffecterChambre,
+    ConsignerUneDecision,
+    ConsulterLeJournal,
+    DecisionAConsigner,
     Demande,
     DemandeInvalideError,
     DemandePlanification,
@@ -442,6 +446,58 @@ def creer_application() -> FastAPI:
             ) from erreur
 
         return ConsequencesRestituees.depuis(consequences)
+
+    @application.post(
+        "/decisions",
+        response_model=DecisionConsultee,
+        status_code=status.HTTP_201_CREATED,
+        summary="Consigner la suite donnee a une proposition",
+        tags=["journal"],
+    )
+    def consigner_une_decision(
+        soumission: DecisionSoumise,
+        session: SessionDeBase,
+    ) -> DecisionConsultee:
+        """Inscrit au journal la suite donnee a une proposition.
+
+        L'etat de l'etablissement demeure inchange: le systeme assiste une
+        decision, il ne l'execute pas.
+        """
+        ConsignerUneDecision().executer(
+            session,
+            DecisionAConsigner(
+                service=soumission.service,
+                situation=soumission.situation,
+                proposition=soumission.proposition,
+                justification=soumission.justification,
+                issue=soumission.issue.value,
+                valideur=soumission.valideur,
+                motif=soumission.motif,
+            ),
+        )
+        session.commit()
+
+        consignees = ConsulterLeJournal().executer(session, 1)
+        return DecisionConsultee.depuis(consignees[0])
+
+    @application.get(
+        "/decisions",
+        response_model=list[DecisionConsultee],
+        summary="Consulter le journal des decisions",
+        tags=["journal"],
+    )
+    def consulter_les_decisions(
+        session: SessionDeBase,
+        limite: int = 50,
+        ecarts_seulement: bool = False,
+    ) -> list[DecisionConsultee]:
+        """Restitue les decisions consignees, de la plus recente a la plus ancienne."""
+        return [
+            DecisionConsultee.depuis(entree)
+            for entree in ConsulterLeJournal().executer(
+                session, limite, ecarts_seulement
+            )
+        ]
 
     return application
 

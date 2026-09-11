@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
@@ -19,11 +20,14 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
+import { consignerUneDecision } from "@/api/client";
 import type {
   ArbitrageRestitue,
   ConsequencesRestituees,
   EtatRestitue,
+  IssueDeDecision,
   LectureRestituee,
+  OptionProposee,
   RelogementPropose,
   ReponseRestituee,
 } from "@/api/contrat";
@@ -47,16 +51,27 @@ interface Proprietes {
 }
 
 export function Restitution({ reponse, surReprise }: Proprietes) {
-  const [decidee, setDecidee] = useState(false);
+  const consignation = useMutation({
+    mutationFn: (decision: {
+      issue: IssueDeDecision;
+      motif: string;
+    }) =>
+      consignerUneDecision({
+        service: reponse.consequences ? "chambres" : "arbitrage",
+        situation: reponse.lecture.enonce,
+        proposition: _resumerLaProposition(reponse),
+        justification: _rassemblerLaJustification(reponse),
+        issue: decision.issue,
+        motif: decision.motif,
+      }),
+  });
 
   if (reponse.nature === "consultation" && reponse.etat) {
     return <Consultation etat={reponse.etat} surReprise={surReprise} />;
   }
 
   if (reponse.nature === "hors_perimetre") {
-    return (
-      <HorsPerimetre message={reponse.message} surReprise={surReprise} />
-    );
+    return <HorsPerimetre message={reponse.message} surReprise={surReprise} />;
   }
 
   if (reponse.nature === "confirmation_requise") {
@@ -76,11 +91,12 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
         <Consequences consequences={reponse.consequences} />
       ) : null}
 
-      {decidee ? (
+      {consignation.isSuccess ? (
         <Panneau ton="sourd">
           <p className="mb-4 text-sm leading-relaxed text-service">
-            La decision, la situation et la trace du raisonnement sont
-            consignees.
+            La decision est consignee au journal, avec la situation et le
+            raisonnement qui l'a produite. L'etat de l'etablissement demeure
+            inchange : son application releve de vos procedures.
           </p>
           <button
             type="button"
@@ -92,7 +108,9 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
         </Panneau>
       ) : (
         <Decision
-          surDecision={() => setDecidee(true)}
+          enCours={consignation.isPending}
+          anomalie={consignation.error}
+          surDecision={(issue, motif) => consignation.mutate({ issue, motif })}
           surReprise={surReprise}
         />
       )}
@@ -300,10 +318,11 @@ function Consequences({
 
 function Relogement({ relogement }: { relogement: RelogementPropose }) {
   const [detaille, setDetaille] = useState(false);
+  const plusieurs = relogement.options.length > 1;
 
   return (
     <Carte retenue={relogement.a_trouve_une_chambre}>
-      <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-display text-lg leading-snug">
             {relogement.reservation}
@@ -316,21 +335,35 @@ function Relogement({ relogement }: { relogement: RelogementPropose }) {
           </p>
         </div>
 
-        {relogement.a_trouve_une_chambre ? (
-          <div className="text-right">
-            <p className="font-display text-2xl leading-none text-accent">
-              {relogement.chambre_proposee}
-            </p>
-            <p className="mt-1 text-xs text-service">chambre proposee</p>
-          </div>
-        ) : (
+        {!relogement.a_trouve_une_chambre ? (
           <Pastille nature="attente">A traiter manuellement</Pastille>
-        )}
+        ) : plusieurs ? (
+          <Pastille nature="accent">
+            {relogement.options.length} possibilites
+          </Pastille>
+        ) : null}
       </div>
+
+      {relogement.options.length > 0 ? (
+        <>
+          {relogement.options_equivalentes ? (
+            <p className="mb-2 text-sm text-service">
+              Ces chambres conviennent également. Aucun critère ne les
+              départage.
+            </p>
+          ) : null}
+
+          <ul className="flex flex-col gap-2">
+            {relogement.options.map((option) => (
+              <OptionRetenue key={option.chambre} option={option} />
+            ))}
+          </ul>
+        </>
+      ) : null}
 
       {!relogement.a_trouve_une_chambre &&
       relogement.motifs_dominants.length > 0 ? (
-        <ul className="mt-3 flex flex-col gap-1">
+        <ul className="mt-1 flex flex-col gap-1">
           {relogement.motifs_dominants.map((motif) => {
             const [code, compte] = motif.split(": ");
             const nombre = compte?.replace(" chambres", "") ?? "";
@@ -352,10 +385,12 @@ function Relogement({ relogement }: { relogement: RelogementPropose }) {
         <ChevronDown
           size={14}
           className={
-            detaille ? "rotate-180 transition-transform" : "transition-transform"
+            detaille
+              ? "rotate-180 transition-transform"
+              : "transition-transform"
           }
         />
-        {detaille ? "Masquer le detail" : "Comment cette proposition a ete etablie"}
+        {detaille ? "Masquer le detail" : "Comment ces propositions ont ete etablies"}
       </button>
 
       {detaille ? (
@@ -370,6 +405,48 @@ function Relogement({ relogement }: { relogement: RelogementPropose }) {
         </div>
       ) : null}
     </Carte>
+  );
+}
+
+function OptionRetenue({ option }: { option: OptionProposee }) {
+  return (
+    <li
+      className={[
+        "rounded-[var(--radius-carte)] px-4 py-3",
+        option.rang === 1 ? "bg-accent-sourd" : "bg-sourd",
+      ].join(" ")}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
+        <p
+          className={[
+            "font-display text-xl leading-none",
+            option.rang === 1 ? "text-accent" : "text-encre",
+          ].join(" ")}
+        >
+          {option.chambre}
+        </p>
+        {option.convoitee ? (
+          <span className="text-xs text-attente">
+            egalement proposee a un autre client
+          </span>
+        ) : null}
+      </div>
+
+      {option.avantages.length > 0 || option.contreparties.length > 0 ? (
+        <ul className="mt-2 flex flex-col gap-1">
+          {option.avantages.map((avantage) => (
+            <li key={avantage} className="text-sm text-succes">
+              {avantage}
+            </li>
+          ))}
+          {option.contreparties.map((contrepartie) => (
+            <li key={contrepartie} className="text-sm text-service">
+              {contrepartie}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </li>
   );
 }
 
@@ -448,45 +525,141 @@ function HorsPerimetre({
 }
 
 function Decision({
+  enCours,
+  anomalie,
   surDecision,
   surReprise,
 }: {
-  surDecision: () => void;
+  enCours: boolean;
+  anomalie: unknown;
+  surDecision: (issue: IssueDeDecision, motif: string) => void;
   surReprise: () => void;
 }) {
+  const [motif, setMotif] = useState("");
+  const [demandee, setDemandee] = useState<IssueDeDecision | null>(null);
+
+  const engager = (issue: IssueDeDecision) => {
+    if (issue === "validee") {
+      surDecision(issue, motif);
+      return;
+    }
+    if (demandee === issue && motif.trim()) {
+      surDecision(issue, motif.trim());
+      return;
+    }
+    setDemandee(issue);
+  };
+
   return (
     <Panneau>
       <EnTeteDeSection eyebrow="Decision" titre="Que faites-vous ?" />
       <p className="mb-4 max-w-2xl text-sm leading-relaxed text-service">
-        Rien n'a ete applique. Validez pour engager les changements proposes,
-        ou reprenez si la proposition ne convient pas.
+        Rien n'est applique. Votre decision est consignee au journal avec le
+        raisonnement qui l'a produite.
       </p>
+
+      {demandee ? (
+        <div className="mb-4">
+          <label htmlFor="motif" className="mb-2 block text-sm text-service">
+            {demandee === "corrigee"
+              ? "Quelle decision retenez-vous ?"
+              : "Pourquoi ecartez-vous cette proposition ?"}
+          </label>
+          <input
+            id="motif"
+            type="text"
+            value={motif}
+            onChange={(evenement) => setMotif(evenement.target.value)}
+            onKeyDown={(evenement) => {
+              if (evenement.key === "Enter") {
+                engager(demandee);
+              }
+            }}
+            autoFocus
+            className="w-full rounded-[var(--radius-carte)] border border-bordure bg-creme px-4 py-3 text-sm outline-none focus:border-encre"
+          />
+        </div>
+      ) : null}
+
+      {anomalie ? (
+        <p className="mb-4 rounded-[var(--radius-carte)] bg-accent-sourd p-4 text-sm text-accent">
+          La decision n'a pas pu etre consignee.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={surDecision}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
+          onClick={() => engager("validee")}
+          disabled={enCours}
+          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           <Check size={16} />
           Valider
         </button>
         <button
           type="button"
-          onClick={surDecision}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure"
+          onClick={() => engager("corrigee")}
+          disabled={enCours}
+          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40"
         >
           <PenLine size={16} />
-          Corriger
+          {demandee === "corrigee" ? "Consigner la correction" : "Corriger"}
+        </button>
+        <button
+          type="button"
+          onClick={() => engager("refusee")}
+          disabled={enCours}
+          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40"
+        >
+          <X size={16} />
+          {demandee === "refusee" ? "Consigner le refus" : "Refuser"}
         </button>
         <button
           type="button"
           onClick={surReprise}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure"
+          className="text-sm text-service hover:text-encre"
         >
-          <X size={16} />
-          Refuser
+          Abandonner
         </button>
       </div>
     </Panneau>
   );
+}
+
+function _resumerLaProposition(reponse: ReponseRestituee): string {
+  if (reponse.consequences) {
+    const propositions = reponse.consequences.sejours_a_reloger
+      .filter((relogement) => relogement.chambre_proposee)
+      .map(
+        (relogement) =>
+          `${relogement.reservation} en ${relogement.chambre_proposee}`,
+      );
+    const sans = reponse.consequences.sejours_sans_solution;
+    return [
+      `Chambre ${reponse.consequences.chambre} indisponible`,
+      ...propositions,
+      sans > 0 ? `${sans} sans solution` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  if (reponse.arbitrage) {
+    return reponse.arbitrage.chambre_proposee
+      ? `${reponse.arbitrage.sejour_a_reloger} en ${reponse.arbitrage.chambre_proposee}`
+      : `${reponse.arbitrage.sejour_a_reloger} sans solution`;
+  }
+
+  return "aucune proposition";
+}
+
+function _rassemblerLaJustification(reponse: ReponseRestituee): string {
+  if (reponse.consequences) {
+    return reponse.consequences.justification.join(" ");
+  }
+  if (reponse.arbitrage) {
+    return [reponse.arbitrage.motif, ...reponse.arbitrage.constats].join(" ");
+  }
+  return "";
 }

@@ -10,6 +10,8 @@ import type {
   AgentConsulte,
   Anomalie,
   ChambreConsultee,
+  DecisionConsultee,
+  DecisionSoumise,
   DemandeAffectation,
   DemandePlanification,
   DemandeSoumise,
@@ -185,6 +187,21 @@ export function planifierNettoyage(
   return envoyer<DemandePlanification, Planification>(
     "/planifications",
     demande,
+  );
+}
+
+export function consignerUneDecision(
+  decision: DecisionSoumise,
+): Promise<DecisionConsultee> {
+  return envoyer<DecisionSoumise, DecisionConsultee>("/decisions", decision);
+}
+
+export function consulterLesDecisions(
+  limite = 50,
+  ecartsSeulement = false,
+): Promise<DecisionConsultee[]> {
+  return lire<DecisionConsultee[]>(
+    `/decisions?limite=${limite}&ecarts_seulement=${ecartsSeulement}`,
   );
 }
 
