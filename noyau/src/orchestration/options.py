@@ -83,6 +83,7 @@ class Eventail:
     examinees: int = 0
     admissibles: int = 0
     interrompu: bool = False
+    motifs_de_rejet: Mapping[str, int] = field(default_factory=dict)
 
     @property
     def est_vide(self) -> bool:
@@ -97,6 +98,34 @@ class Eventail:
         """Indique qu'un arbitrage demeure ouvert au responsable."""
         return len(self.options) > 1
 
+    @property
+    def sont_equivalentes(self) -> bool:
+        """Indique qu'aucun critere ne departage les options.
+
+        Un classement presente sans qu'aucun critere ne le fonde laisserait
+        croire a une preference du systeme la ou il n'en a aucune. Le
+        responsable doit savoir que son choix est libre.
+        """
+        if len(self.options) < 2:
+            return False
+        couts = {option.cout for option in self.options}
+        return len(couts) == 1
+
+    @property
+    def motifs_dominants(self) -> tuple[str, ...]:
+        """Restitue les motifs ayant ecarte le plus de chambres.
+
+        Le diagnostic n'a d'utilite que lorsque l'eventail demeure vide: il
+        designe alors ce qui s'oppose a toute solution, la ou le seul constat
+        d'absence laisserait le responsable sans prise.
+        """
+        return tuple(
+            f"{motif}: {compte} chambres"
+            for motif, compte in sorted(
+                self.motifs_de_rejet.items(), key=lambda paire: -paire[1]
+            )[:3]
+        )
+
     def resumer(self) -> str:
         """Formule l'etendue du choix restitue."""
         if not self.options:
@@ -105,6 +134,12 @@ class Eventail:
             return (
                 f"Une seule chambre convient sur les {self.examinees} examinees: "
                 f"{self.options[0].chambre}."
+            )
+        if self.sont_equivalentes:
+            return (
+                f"{len(self.options)} chambres conviennent egalement, "
+                f"sur {self.admissibles} admissibles et {self.examinees} examinees. "
+                f"Aucun critere ne les departage."
             )
         return (
             f"{len(self.options)} chambres conviennent, sur {self.admissibles} "
@@ -136,6 +171,7 @@ class ProposerDesOptions:
         examinees = 0
         admissibles = 0
         interrompu = False
+        motifs_de_rejet: dict[str, int] = {}
 
         for rang in range(1, nombre + 1):
             parc = tuple(
@@ -151,6 +187,7 @@ class ProposerDesOptions:
             if rang == 1:
                 examinees = recommandation.nombre_examinees
                 admissibles = len(recommandation.resultat.admissibles)
+                motifs_de_rejet = _compter_les_rejets(recommandation)
             interrompu = interrompu or recommandation.resultat.interrompu
 
             if not recommandation.a_conclu or recommandation.chambre_proposee is None:
@@ -166,6 +203,7 @@ class ProposerDesOptions:
             examinees=examinees,
             admissibles=admissibles,
             interrompu=interrompu,
+            motifs_de_rejet=motifs_de_rejet,
         )
         logger.info(
             "%d options etablies sur %d admissibles",
@@ -180,6 +218,20 @@ def _restreindre(demande: Demande, parc: tuple[Chambre, ...]) -> Demande:
     from dataclasses import replace
 
     return replace(demande, parc=parc)
+
+
+def _compter_les_rejets(recommandation: Recommandation) -> dict[str, int]:
+    """Denombre les chambres que chaque motif a ecartees.
+
+    Le compte est etabli sur la premiere interrogation seule: elle porte sur le
+    parc entier, quand les suivantes portent sur ce qu'il en reste. Les cumuler
+    compterait plusieurs fois le meme rejet.
+    """
+    comptes: dict[str, int] = {}
+    for option in recommandation.options_ecartees:
+        for motif in option.motifs:
+            comptes[motif.motif] = comptes.get(motif.motif, 0) + 1
+    return comptes
 
 
 def _constituer(rang: int, recommandation: Recommandation) -> Option:

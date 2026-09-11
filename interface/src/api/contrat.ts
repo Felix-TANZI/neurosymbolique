@@ -295,6 +295,15 @@ export interface IncidentSignale {
   temps_maximal?: number | null;
 }
 
+export interface OptionDeRelogement {
+  rang: number;
+  chambre: string;
+  cout: number;
+  justification: string;
+  avantages: string[];
+  contreparties: string[];
+}
+
 export interface RelogementPropose {
   reservation: string;
   client: string;
@@ -307,6 +316,8 @@ export interface RelogementPropose {
   chambres_examinees: number;
   chambres_admissibles: number;
   motifs_dominants: string[];
+  options: OptionDeRelogement[];
+  offre_un_choix: boolean;
 }
 
 export interface ConsequencesRestituees {

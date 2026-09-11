@@ -34,6 +34,7 @@ from src.orchestration import (
     AffecterChambre,
     ConnaissancesIndisponiblesError,
     PlanifierNettoyage,
+    ProposerDesOptions,
     TraiterUnIncident,
     creer_cas_usage,
     creer_cas_usage_housekeeping,
@@ -74,7 +75,7 @@ def obtenir_cas_usage_housekeeping() -> PlanifierNettoyage:
 @lru_cache(maxsize=1)
 def obtenir_traitement_d_incident() -> TraiterUnIncident:
     """Construit le cas d'usage de traitement d'incident une seule fois."""
-    return TraiterUnIncident(obtenir_cas_usage())
+    return TraiterUnIncident(ProposerDesOptions(obtenir_cas_usage()))
 
 
 @lru_cache(maxsize=1)

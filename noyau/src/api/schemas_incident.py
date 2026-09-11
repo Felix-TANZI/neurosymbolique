@@ -15,9 +15,31 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from src.domaine import Gravite, TypeIncident
-from src.orchestration import ConsequencesDUnIncident, SejourARelogerr
+from src.orchestration import ConsequencesDUnIncident, Option, SejourARelogerr
 
 Reference = Annotated[str, Field(min_length=1, max_length=64)]
+
+
+class OptionDeRelogement(BaseModel):
+    """Chambre possible pour un relogement, et ce qui la distingue."""
+
+    rang: int
+    chambre: str
+    cout: int
+    justification: str
+    avantages: list[str]
+    contreparties: list[str]
+
+    @classmethod
+    def depuis(cls, option: Option) -> "OptionDeRelogement":
+        return cls(
+            rang=option.rang,
+            chambre=option.chambre,
+            cout=option.cout,
+            justification=option.justification,
+            avantages=list(option.avantages),
+            contreparties=list(option.contreparties),
+        )
 
 
 class IncidentSignale(BaseModel):
@@ -41,7 +63,13 @@ class IncidentSignale(BaseModel):
 
 
 class RelogementPropose(BaseModel):
-    """Sejour prive de sa chambre et proposition qui lui est faite."""
+    """Sejour prive de sa chambre et options qui lui sont ouvertes.
+
+    La chambre proposee demeure restituee separement des options: elle designe
+    celle que le moteur retient, quand les options restituent l'etendue du
+    choix. Un client rappelle ainsi une seule chambre au responsable presse,
+    sans lui retirer l'arbitrage lorsqu'il s'en saisit.
+    """
 
     reservation: str
     client: str
@@ -59,21 +87,19 @@ class RelogementPropose(BaseModel):
             "solution n'existe."
         )
     )
+    options: list[OptionDeRelogement] = Field(
+        default_factory=list,
+        description="Relogements possibles, du mieux note au moins bien note.",
+    )
+    offre_un_choix: bool = Field(
+        default=False, description="Plusieurs chambres conviennent au sejour"
+    )
 
     @classmethod
     def depuis(cls, relogement: SejourARelogerr) -> "RelogementPropose":
         sejour = relogement.reservation
-        recommandation = relogement.recommandation
-
-        comptes: dict[str, int] = {}
-        for option in recommandation.options_ecartees:
-            for motif in option.motifs:
-                comptes[motif.motif] = comptes.get(motif.motif, 0) + 1
-
-        dominants = [
-            f"{motif}: {compte} chambres"
-            for motif, compte in sorted(comptes.items(), key=lambda paire: -paire[1])[:3]
-        ]
+        eventail = relogement.eventail
+        preferee = eventail.preferee
 
         return cls(
             reservation=str(sejour.identifiant),
@@ -83,10 +109,15 @@ class RelogementPropose(BaseModel):
             nombre_personnes=sejour.nombre_personnes,
             chambre_proposee=relogement.chambre_proposee,
             a_trouve_une_chambre=relogement.a_trouve_une_chambre,
-            justification=recommandation.justification.decision.texte,
-            chambres_examinees=recommandation.nombre_examinees,
-            chambres_admissibles=len(recommandation.resultat.admissibles),
-            motifs_dominants=[] if relogement.a_trouve_une_chambre else dominants,
+            justification=preferee.justification if preferee else eventail.resumer(),
+            chambres_examinees=eventail.examinees,
+            chambres_admissibles=eventail.admissibles,
+            motifs_dominants=(
+                [] if relogement.a_trouve_une_chambre
+                else list(eventail.motifs_dominants)
+            ),
+            options=[OptionDeRelogement.depuis(option) for option in eventail.options],
+            offre_un_choix=relogement.offre_un_choix,
         )
 
 

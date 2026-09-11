@@ -17,6 +17,7 @@ from pathlib import Path
 from src.domaine import Gravite, TypeIncident
 from src.donnees import creer_fabrique_de_sessions, creer_moteur, session_de_travail
 from src.orchestration import (
+    ProposerDesOptions,
     SignalementDIncident,
     TraiterUnIncident,
     creer_cas_usage,
@@ -34,7 +35,7 @@ def main() -> int:
     analyseur.add_argument("--jour", default="2026-08-12")
     arguments = analyseur.parse_args()
 
-    cas = TraiterUnIncident(creer_cas_usage(RACINE_CONNAISSANCES))
+    cas = TraiterUnIncident(ProposerDesOptions(creer_cas_usage(RACINE_CONNAISSANCES)))
     moteur = creer_moteur()
     fabrique = creer_fabrique_de_sessions(moteur)
 
@@ -63,7 +64,7 @@ def main() -> int:
     print(f"  entierement resolu: {consequences.est_entierement_resolu}")
 
     for relogement in consequences.sejours_a_reloger:
-        recommandation = relogement.recommandation
+        eventail = relogement.eventail
         sejour = relogement.reservation
         print(f"\n  {relogement.reference}")
         print(
@@ -75,25 +76,25 @@ def main() -> int:
             equipement.value for equipement in sejour.exigences_obligatoires
         )
         print(f"    exigences: {exigences or 'aucune'}")
-        print(
-            f"    {recommandation.nombre_examinees} chambres examinees, "
-            f"{len(recommandation.resultat.admissibles)} admissibles"
-        )
+        print(f"    {eventail.resumer()}")
 
-        if not recommandation.a_conclu:
-            motifs: dict[str, int] = {}
-            for option in recommandation.options_ecartees:
-                for motif in option.motifs:
-                    motifs[motif.motif] = motifs.get(motif.motif, 0) + 1
+        for option in eventail.options:
+            print(f"    {option}")
+            for avantage in option.avantages:
+                print(f"      + {avantage}")
+            for contrepartie in option.contreparties:
+                print(f"      - {contrepartie}")
+
+        if relogement.options_partagees:
+            print(
+                f"    attention: {', '.join(relogement.options_partagees)} "
+                f"egalement proposees a un autre sejour"
+            )
+
+        if eventail.est_vide:
             print("    motifs de rejet:")
-            for code, compte in sorted(
-                motifs.items(), key=lambda paire: -paire[1]
-            ):
-                print(f"      {code}: {compte} chambres")
-
-        if not recommandation.a_conclu and recommandation.resultat.admissibles:
-            admissibles = sorted(recommandation.resultat.admissibles)
-            print(f"    admissibles au diagnostic: {admissibles}")
+            for enonce in eventail.motifs_dominants:
+                print(f"      {enonce}")
             deja = [
                 str(autre.chambre_proposee)
                 for autre in consequences.sejours_a_reloger

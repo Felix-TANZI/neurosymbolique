@@ -2,7 +2,7 @@
 
 Le cas d'usage enchaine les consequences d'un incident: la chambre devient
 indisponible, les sejours qu'elle heberge perdent leur affectation, et chacun
-recoit une proposition de relogement.
+se voit ouvrir un eventail de relogements possibles.
 
 L'enchainement constitue la reponse operationnelle attendue: un responsable
 qui signale une fuite n'attend pas qu'on lui confirme la fuite, mais qu'on lui
@@ -27,6 +27,7 @@ from src.domaine import (
     Incident,
     NumeroChambre,
     Periode,
+    Preferences,
     Reservation,
     TypeIncident,
 )
@@ -36,8 +37,9 @@ from src.donnees import (
     EntiteIntrouvableError,
 )
 
-from .affectation import AffecterChambre, Recommandation, demande_depuis
+from .affectation import demande_depuis
 from .composition import SituationIncompleteError
+from .options import OPTIONS_PAR_DEFAUT, Eventail, ProposerDesOptions
 
 logger = logging.getLogger(__name__)
 
@@ -59,14 +61,31 @@ class SignalementDIncident:
     gravite: Gravite
     description: str = ""
     jour: date = field(default_factory=date.today)
+    preferences: Preferences = field(default_factory=Preferences)
 
 
 @dataclass(frozen=True, slots=True)
 class SejourARelogerr:
-    """Sejour prive de sa chambre et proposition qui lui est faite."""
+    """Sejour prive de sa chambre et options qui lui sont ouvertes."""
 
     reservation: Reservation
-    recommandation: Recommandation
+    eventail: Eventail
+    convoitees: frozenset[str] = field(default_factory=frozenset)
+
+    @property
+    def options_partagees(self) -> tuple[str, ...]:
+        """Restitue les chambres qu'un autre sejour peut egalement recevoir.
+
+        Une chambre proposee a deux sejours dont les periodes ne se
+        chevauchent pas demeure attribuable a l'un ou a l'autre, mais non aux
+        deux si leurs choix se portent sur elle. Le responsable doit le savoir
+        avant d'arreter le premier choix.
+        """
+        return tuple(
+            option.chambre
+            for option in self.eventail.options
+            if option.chambre in self.convoitees
+        )
 
     @property
     def reference(self) -> str:
@@ -74,11 +93,16 @@ class SejourARelogerr:
 
     @property
     def a_trouve_une_chambre(self) -> bool:
-        return self.recommandation.a_conclu
+        return not self.eventail.est_vide
 
     @property
     def chambre_proposee(self) -> str | None:
-        return self.recommandation.chambre_proposee
+        preferee = self.eventail.preferee
+        return preferee.chambre if preferee else None
+
+    @property
+    def offre_un_choix(self) -> bool:
+        return self.eventail.offre_un_choix
 
 
 @dataclass(frozen=True, slots=True)
@@ -122,8 +146,8 @@ class ConsequencesDUnIncident:
 class TraiterUnIncident:
     """Etablit les consequences operationnelles d'un incident signale."""
 
-    def __init__(self, affectation: AffecterChambre) -> None:
-        self._affectation = affectation
+    def __init__(self, options: ProposerDesOptions) -> None:
+        self._options = options
 
     def executer(
         self,
@@ -158,7 +182,12 @@ class TraiterUnIncident:
 
         concernes = self._sejours_heberges(session, chambre.numero, signalement.jour)
         relogements = self._reloger_ensemble(
-            session, concernes, chambre.numero, temps_maximal, signalement.jour
+            session,
+            concernes,
+            chambre.numero,
+            signalement.jour,
+            temps_maximal,
+            signalement.preferences,
         )
 
         consequences = ConsequencesDUnIncident(
@@ -230,8 +259,9 @@ class TraiterUnIncident:
         session: Session,
         sejours: list[Reservation],
         chambre_immobilisee: NumeroChambre,
-        temps_maximal: float | None,
         jour: date,
+        temps_maximal: float | None,
+        preferences: Preferences,
     ) -> tuple[SejourARelogerr, ...]:
         """Etablit les relogements en tenant compte de ceux deja proposes.
 
@@ -243,14 +273,26 @@ class TraiterUnIncident:
         L'ordre suit la date d'arrivee: un sejour deja commence appelle une
         solution plus urgente qu'un sejour a venir.
         """
-        retenues: list[Reservation] = []
         relogements: list[SejourARelogerr] = []
+        retenues: list[Reservation] = []
+        proposees: dict[str, list[str]] = {}
 
         for sejour in sorted(sejours, key=lambda s: s.periode.arrivee):
             relogement = self._reloger(
-                session, sejour, chambre_immobilisee, temps_maximal, jour, retenues
+                session,
+                sejour,
+                chambre_immobilisee,
+                jour,
+                temps_maximal,
+                preferences,
+                retenues,
             )
             relogements.append(relogement)
+
+            for option in relogement.eventail.options:
+                proposees.setdefault(option.chambre, []).append(
+                    relogement.reference
+                )
 
             if relogement.chambre_proposee is not None:
                 retenues.append(
@@ -259,23 +301,41 @@ class TraiterUnIncident:
                     )
                 )
 
-        return tuple(relogements)
+        partagees = frozenset(
+            chambre
+            for chambre, references in proposees.items()
+            if len(references) > 1
+        )
+
+        return tuple(
+            SejourARelogerr(
+                reservation=relogement.reservation,
+                eventail=relogement.eventail,
+                convoitees=partagees,
+            )
+            for relogement in relogements
+        )
 
     def _reloger(
         self,
         session: Session,
         sejour: Reservation,
         chambre_immobilisee: NumeroChambre,
-        temps_maximal: float | None,
         jour: date,
+        temps_maximal: float | None,
+        preferences: Preferences,
         deja_proposees: list[Reservation] | None = None,
     ) -> SejourARelogerr:
-        """Etablit une proposition de relogement pour un sejour.
+        """Etablit les options de relogement ouvertes a un sejour.
 
         Le parc soumis exclut la chambre immobilisee, ce qui evite qu'elle ne
         soit proposee a nouveau. Les occupations concurrentes demeurent prises
         en compte: reloger un client dans une chambre deja retenue par un autre
         deplacerait le probleme.
+
+        Les preferences exprimees sur l'incident s'appliquent a chaque
+        relogement: un responsable qui souhaite reloger a proximite l'entend
+        pour l'ensemble des clients deplaces, non pour le premier seulement.
         """
         depot_chambres = DepotChambres(session)
         depot_reservations = DepotReservations(session)
@@ -299,11 +359,17 @@ class TraiterUnIncident:
         ]
 
         demande = demande_depuis(
-            parc, sejour.avec_chambre(None), occupations, jour=jour
+            parc,
+            sejour.avec_chambre(None),
+            occupations,
+            jour=jour,
+            preferences=preferences,
         )
         return SejourARelogerr(
             reservation=sejour,
-            recommandation=self._affectation.executer(demande, temps_maximal),
+            eventail=self._options.executer(
+                demande, OPTIONS_PAR_DEFAUT, temps_maximal
+            ),
         )
 
     @staticmethod
@@ -325,9 +391,14 @@ class TraiterUnIncident:
 
         for relogement in relogements:
             if relogement.a_trouve_une_chambre:
+                alternatives = (
+                    f", ou {len(relogement.eventail.options) - 1} autres possibles"
+                    if relogement.offre_un_choix
+                    else ""
+                )
                 enonces.append(
                     f"{relogement.reference} peut etre reloge en "
-                    f"{relogement.chambre_proposee}."
+                    f"{relogement.chambre_proposee}{alternatives}."
                 )
             else:
                 enonces.append(
