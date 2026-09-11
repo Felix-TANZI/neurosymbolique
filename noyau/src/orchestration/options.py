@@ -112,18 +112,17 @@ class Eventail:
         return len(couts) == 1
 
     @property
-    def motifs_dominants(self) -> tuple[str, ...]:
+    def motifs_dominants(self) -> tuple[tuple[str, int], ...]:
         """Restitue les motifs ayant ecarte le plus de chambres.
 
-        Le diagnostic n'a d'utilite que lorsque l'eventail demeure vide: il
-        designe alors ce qui s'oppose a toute solution, la ou le seul constat
-        d'absence laisserait le responsable sans prise.
+        Les motifs n'ont d'utilite qu'en l'absence d'option: ils designent
+        alors ce qui fait obstacle, et par consequent ce qu'il faudrait
+        relacher. La presence d'options rend leur restitution superflue.
         """
+        if self.options:
+            return ()
         return tuple(
-            f"{motif}: {compte} chambres"
-            for motif, compte in sorted(
-                self.motifs_de_rejet.items(), key=lambda paire: -paire[1]
-            )[:3]
+            sorted(self.motifs_de_rejet.items(), key=lambda paire: -paire[1])
         )
 
     def resumer(self) -> str:
@@ -171,7 +170,7 @@ class ProposerDesOptions:
         examinees = 0
         admissibles = 0
         interrompu = False
-        motifs_de_rejet: dict[str, int] = {}
+        motifs: dict[str, int] = {}
 
         for rang in range(1, nombre + 1):
             parc = tuple(
@@ -187,7 +186,8 @@ class ProposerDesOptions:
             if rang == 1:
                 examinees = recommandation.nombre_examinees
                 admissibles = len(recommandation.resultat.admissibles)
-                motifs_de_rejet = _compter_les_rejets(recommandation)
+                motifs = _relever_les_motifs(recommandation)
+
             interrompu = interrompu or recommandation.resultat.interrompu
 
             if not recommandation.a_conclu or recommandation.chambre_proposee is None:
@@ -203,7 +203,7 @@ class ProposerDesOptions:
             examinees=examinees,
             admissibles=admissibles,
             interrompu=interrompu,
-            motifs_de_rejet=motifs_de_rejet,
+            motifs_de_rejet=motifs,
         )
         logger.info(
             "%d options etablies sur %d admissibles",
@@ -220,13 +220,8 @@ def _restreindre(demande: Demande, parc: tuple[Chambre, ...]) -> Demande:
     return replace(demande, parc=parc)
 
 
-def _compter_les_rejets(recommandation: Recommandation) -> dict[str, int]:
-    """Denombre les chambres que chaque motif a ecartees.
-
-    Le compte est etabli sur la premiere interrogation seule: elle porte sur le
-    parc entier, quand les suivantes portent sur ce qu'il en reste. Les cumuler
-    compterait plusieurs fois le meme rejet.
-    """
+def _relever_les_motifs(recommandation: Recommandation) -> dict[str, int]:
+    """Denombre les chambres ecartees par chaque motif."""
     comptes: dict[str, int] = {}
     for option in recommandation.options_ecartees:
         for motif in option.motifs:

@@ -25,6 +25,7 @@ from src.api.schemas_reponse import (
 )
 from src.domaine import Gravite, TypeIncident
 from src.neuronal.inference import Interpretation
+from src.neuronal.preferences_lues import chambre_concernee, relever_les_preferences
 from src.neuronal.taxonomie import (
     INTENTIONS_DE_CONSULTATION,
     Intention,
@@ -40,6 +41,12 @@ logger = logging.getLogger(__name__)
 INCIDENTS: dict[str, TypeIncident] = {
     incident.value: incident for incident in TypeIncident
 }
+
+INCIDENTS_COMPOSITES: frozenset[str] = frozenset(
+    {Intention.INCIDENT_AVEC_PREFERENCE.value}
+)
+
+TYPE_PAR_DEFAUT = TypeIncident.DEGAT_DES_EAUX
 
 CONSEILS_PAR_DEFAUT = (
     "Decrivez la situation pour que je puisse vous aider. Par exemple: "
@@ -98,6 +105,17 @@ def aiguiller(
     if intention is Intention.CONFLIT_AFFECTATION:
         return _arbitrer(
             session, interpretation, lecture, arbitrage, jour, temps_maximal
+        )
+
+    if intention.value in INCIDENTS_COMPOSITES:
+        return _traiter_l_incident(
+            session,
+            interpretation,
+            lecture,
+            traitement,
+            jour,
+            temps_maximal,
+            TYPE_PAR_DEFAUT,
         )
 
     if intention.value in INCIDENTS:
@@ -179,9 +197,17 @@ def _traiter_l_incident(
     traitement: TraiterUnIncident,
     jour: date,
     temps_maximal: float | None,
+    type_impose: TypeIncident | None = None,
 ) -> ReponseRestituee:
-    """Etablit les consequences d'un incident signale."""
-    chambre = interpretation.valeur_de(TypeDEntite.CHAMBRE.value)
+    """Etablit les consequences d'un incident signale.
+
+    Une intention composite ne precise pas la nature de l'incident: elle
+    signale qu'une chambre pose probleme et qu'une preference accompagne le
+    relogement. La nature retenue par defaut immobilise la chambre, ce qui
+    correspond a la conduite attendue lorsque le responsable demande un
+    relogement.
+    """
+    chambre = chambre_concernee(interpretation)
     if chambre is None:
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
@@ -194,10 +220,12 @@ def _traiter_l_incident(
             session,
             SignalementDIncident(
                 chambre=chambre,
-                type_incident=INCIDENTS[interpretation.intention],
+                type_incident=type_impose
+                or INCIDENTS[interpretation.intention],
                 gravite=Gravite.MAJEURE,
                 description=interpretation.enonce,
                 jour=jour,
+                preferences=relever_les_preferences(interpretation),
             ),
             temps_maximal,
         )

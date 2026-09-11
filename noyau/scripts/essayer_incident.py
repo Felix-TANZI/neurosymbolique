@@ -93,8 +93,8 @@ def main() -> int:
 
         if eventail.est_vide:
             print("    motifs de rejet:")
-            for enonce in eventail.motifs_dominants:
-                print(f"      {enonce}")
+            for motif, compte in eventail.motifs_dominants:
+                print(f"      {motif}: {compte} chambres")
             deja = [
                 str(autre.chambre_proposee)
                 for autre in consequences.sejours_a_reloger
