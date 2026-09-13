@@ -43,9 +43,16 @@ from .planification import (
     creer_cas_usage_housekeeping,
     demande_de_service,
 )
+from .repartition import (
+    ChargeAssignee,
+    RepartirUneCharge,
+    RepartitionImpossibleError,
+    RepartitionProposee,
+)
 
 __all__ = [
     "AffecterChambre",
+    "ChargeAssignee",
     "ConsignerUneDecision",
     "ConsulterLeJournal",
     "Connaissances",
@@ -64,6 +71,9 @@ __all__ = [
     "PlanifierNettoyage",
     "ProposerDesOptions",
     "Recommandation",
+    "RepartirUneCharge",
+    "RepartitionImpossibleError",
+    "RepartitionProposee",
     "SejourARelogerr",
     "SignalementDIncident",
     "SituationIncompleteError",
