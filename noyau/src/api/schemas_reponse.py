@@ -19,6 +19,9 @@ from src.api.schemas_interpretation import LectureRestituee
 from src.gouvernance.risque import Appreciation
 from src.orchestration.arbitrage import ArbitrageRendu
 from src.orchestration.consultation import Reponse
+from src.orchestration.maintenance import PlanDIntervention
+from src.orchestration.planification import DemandePlanification
+from src.orchestration.repartition import RepartitionProposee
 
 
 @unique
@@ -30,6 +33,9 @@ class NatureDeLaReponse(StrEnum):
     CONSEQUENCES = "consequences"
     CONFIRMATION_REQUISE = "confirmation_requise"
     HORS_PERIMETRE = "hors_perimetre"
+    REPARTITION = "repartition"
+    PLAN_D_INTERVENTION = "plan_d_intervention"
+    PLANIFICATION = "planification"
 
 
 class EtatRestitue(BaseModel):
@@ -96,6 +102,130 @@ class ArbitrageRestitue(BaseModel):
             ],
             anomalie=rendu.anomalie,
             demande_une_intervention=rendu.demande_une_intervention,
+        )
+
+
+class RepartitionRestituee(BaseModel):
+    """Repartition d'une charge entre un effectif."""
+
+    chambres: int
+    agents: int
+    parts: list[dict[str, object]]
+    duree: str = Field(examples=["2 h"])
+    est_equilibree: bool
+    justification: list[str]
+
+    @classmethod
+    def depuis(cls, proposee: RepartitionProposee) -> "RepartitionRestituee":
+        return cls(
+            chambres=proposee.chambres,
+            agents=proposee.agents,
+            parts=[
+                {
+                    "rang": part.rang,
+                    "chambres": part.chambres,
+                    "duree": part.duree_lisible,
+                }
+                for part in proposee.parts
+            ],
+            duree=proposee.duree_lisible,
+            est_equilibree=proposee.est_equilibree,
+            justification=list(proposee.justification),
+        )
+
+
+class InterventionRestituee(BaseModel):
+    """Intervention et technicien retenu."""
+
+    rang: int
+    identifiant: str
+    objet: str
+    competence: str
+    criticite: int
+    technicien: str
+    motif: str
+
+
+class InterventionEnAttenteRestituee(BaseModel):
+    """Intervention qu'aucun technicien ne peut conduire."""
+
+    identifiant: str
+    objet: str
+    cause: str
+    detail: str
+
+
+class PlanRestitue(BaseModel):
+    """Plan d'intervention etabli pour la maintenance."""
+
+    affectees: list[InterventionRestituee]
+    en_attente: list[InterventionEnAttenteRestituee]
+    repartition: dict[str, list[str]]
+    est_complet: bool
+    justification: list[str]
+
+    @classmethod
+    def depuis(cls, plan: PlanDIntervention) -> "PlanRestitue":
+        return cls(
+            affectees=[
+                InterventionRestituee(
+                    rang=affectee.rang,
+                    identifiant=affectee.reference,
+                    objet=affectee.intervention.objet,
+                    competence=affectee.intervention.competence.value,
+                    criticite=affectee.intervention.criticite,
+                    technicien=str(affectee.technicien.identifiant),
+                    motif=affectee.motif,
+                )
+                for affectee in plan.affectees
+            ],
+            en_attente=[
+                InterventionEnAttenteRestituee(
+                    identifiant=manquee.intervention.identifiant,
+                    objet=manquee.intervention.objet,
+                    cause=manquee.cause,
+                    detail=manquee.detail,
+                )
+                for manquee in plan.en_attente
+            ],
+            repartition={
+                technicien: list(references)
+                for technicien, references in plan.par_technicien().items()
+            },
+            est_complet=plan.est_complet,
+            justification=list(plan.justification),
+        )
+
+
+class PlanificationRestituee(BaseModel):
+    """Journee de service composee pour la planification.
+
+    Le perimetre est restitue tel que compose depuis l'etat de l'etablissement:
+    taches a planifier, agents affectables, et rapport entre la charge et la
+    capacite disponible.
+    """
+
+    taches: list[str]
+    agents: list[str]
+    charge_minutes: int
+    capacite_minutes: int
+    est_sous_capacite: bool = Field(
+        description="La charge excede la capacite des agents affectables"
+    )
+    secteurs_reserves: list[str]
+
+    @classmethod
+    def depuis(cls, demande: DemandePlanification) -> "PlanificationRestituee":
+        service = demande.service
+        return cls(
+            taches=sorted(tache.identifiant for tache in service.taches_a_planifier),
+            agents=sorted(
+                str(agent.identifiant) for agent in service.agents_affectables
+            ),
+            charge_minutes=service.charge_totale_minutes,
+            capacite_minutes=service.capacite_totale_minutes,
+            est_sous_capacite=service.est_sous_capacite,
+            secteurs_reserves=list(demande.secteurs_reserves),
         )
 
 
@@ -166,6 +296,9 @@ class ReponseRestituee(BaseModel):
     etat: EtatRestitue | None = None
     arbitrage: ArbitrageRestitue | None = None
     consequences: ConsequencesRestituees | None = None
+    repartition: RepartitionRestituee | None = None
+    plan: PlanRestitue | None = None
+    planification: PlanificationRestituee | None = None
     risque: RisqueApprecie | None = Field(
         default=None,
         description="Prudence que la situation commande",

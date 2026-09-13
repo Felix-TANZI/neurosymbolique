@@ -337,6 +337,9 @@ export type NatureDeLaReponse =
   | "consultation"
   | "arbitrage"
   | "consequences"
+  | "repartition"
+  | "plan_d_intervention"
+  | "planification"
   | "confirmation_requise"
   | "hors_perimetre";
 
@@ -372,6 +375,46 @@ export interface ArbitrageRestitue {
   demande_une_intervention: boolean;
 }
 
+export interface PartDeCharge {
+  rang: number;
+  chambres: number;
+  duree: string;
+}
+
+export interface RepartitionRestituee {
+  chambres: number;
+  agents: number;
+  parts: PartDeCharge[];
+  duree: string;
+  est_equilibree: boolean;
+  justification: string[];
+}
+
+export interface InterventionRestituee {
+  rang: number;
+  identifiant: string;
+  objet: string;
+  competence: string;
+  criticite: number;
+  technicien: string;
+  motif: string;
+}
+
+export interface InterventionEnAttenteRestituee {
+  identifiant: string;
+  objet: string;
+  cause: string;
+  detail: string;
+}
+
+export interface PlanRestitue {
+  affectees: InterventionRestituee[];
+  en_attente: InterventionEnAttenteRestituee[];
+  repartition: Record<string, string[]>;
+  est_complet: boolean;
+  justification: string[];
+}
+
 export interface RisqueApprecie {
   niveau: 1 | 2 | 3 | 4;
   libelle: string;
@@ -388,6 +431,8 @@ export interface ReponseRestituee {
   etat: EtatRestitue | null;
   arbitrage: ArbitrageRestitue | null;
   consequences: ConsequencesRestituees | null;
+  repartition: RepartitionRestituee | null;
+  plan: PlanRestitue | null;
   risque: RisqueApprecie | null;
   message: string;
 }

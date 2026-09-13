@@ -33,6 +33,8 @@ import { Carte, EnTeteDeSection, Panneau } from "@/composants/Panneau";
 import { Pastille } from "@/composants/Pastille";
 import { Abstention, Risque } from "@/composants/Risque";
 import { enJourLisible } from "@/etat/jour";
+import { PlanDIntervention } from "./PlanDIntervention";
+import { Repartition } from "./Repartition";
 
 const MOTIFS: Record<string, string> = {
   sejour_en_conflit: "chambres deja reservees sur ces dates",
@@ -81,12 +83,34 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
     return <Consultation etat={reponse.etat} surReprise={surReprise} />;
   }
 
+  if (reponse.nature === "repartition" && reponse.repartition) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Repartition repartition={reponse.repartition} />
+        <Panneau>
+          <button
+            type="button"
+            onClick={surReprise}
+            className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
+          >
+            <RotateCcw size={14} />
+            Poser une autre question
+          </button>
+        </Panneau>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       {reponse.arbitrage ? <Arbitrage arbitrage={reponse.arbitrage} /> : null}
       {reponse.consequences ? (
         <Consequences consequences={reponse.consequences} />
       ) : null}
+      {reponse.repartition ? (
+        <Repartition repartition={reponse.repartition} />
+      ) : null}
+      {reponse.plan ? <PlanDIntervention plan={reponse.plan} /> : null}
 
       {reponse.risque && reponse.risque.appelle_une_verification ? (
         <Panneau ton="sourd">
