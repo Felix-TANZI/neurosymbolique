@@ -1,9 +1,13 @@
 name: CD - Deploiement
 
-# Le deploiement est declenche manuellement. Le systeme n'a pas vocation a
-# suivre chaque poussee: il est mis en service pour une evaluation, puis
-# retire.
+# Le deploiement suit le CI: il ne s'engage que sur un etat verifie. Il
+# demeure declenchable a la main pour une remise en service sans nouvelle
+# poussee.
 on:
+  workflow_run:
+    workflows: ["CI"]
+    branches: [main]
+    types: [completed]
   workflow_dispatch:
     inputs:
       constituer:
@@ -20,8 +24,20 @@ jobs:
     name: Deployer sur le serveur
     runs-on: ubuntu-latest
     environment: "Neuro Prod"
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
+      - name: Determiner le commit a deployer
+        id: sha
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "sha=${{ github.sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deployer
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -45,7 +61,7 @@ jobs:
 
             cd "$CIBLE"
             git fetch origin main
-            git reset --hard origin/main
+            git reset --hard "${{ steps.sha.outputs.sha }}"
 
             echo "Construction des images"
             docker compose build
