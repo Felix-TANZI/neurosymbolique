@@ -1,0 +1,60 @@
+# Assemblage du systeme neuro-symbolique.
+#
+# Les conteneurs sont isoles sur leur propre reseau et n'exposent aucun port
+# a l'exterieur: l'acces passe par le tunnel, ce qui evite d'ouvrir un port
+# supplementaire sur un serveur qui en heberge deja d'autres services.
+
+name: neurosymbolique
+
+services:
+  noyau:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      NEURO_BASE_DE_DONNEES: sqlite:////donnees/operations.sqlite3
+    volumes:
+      # La base et le modele persistent hors du conteneur: une reconstruction
+      # ne doit ni effacer l'etablissement ni imposer un reentrainement.
+      - donnees:/donnees
+      - modeles:/application/modeles
+      # Les regles et gabarits demeurent modifiables sans reconstruction:
+      # ils relevent de l'exploitation et non du code.
+      - ./connaissances:/connaissances:ro
+    networks:
+      - interne
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8000/sante"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+      retries: 3
+
+  interface:
+    build:
+      context: ./interface
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      noyau:
+        condition: service_healthy
+    networks:
+      - interne
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on:
+      - interface
+    command: tunnel --no-autoupdate --url http://interface:80
+    networks:
+      - interne
+
+networks:
+  interne:
+    name: neurosymbolique_interne
+
+volumes:
+  donnees:
+  modeles:

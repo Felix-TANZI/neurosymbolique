@@ -1,0 +1,86 @@
+name: CD - Deploiement
+
+# Le deploiement est declenche manuellement. Le systeme n'a pas vocation a
+# suivre chaque poussee: il est mis en service pour une evaluation, puis
+# retire.
+on:
+  workflow_dispatch:
+    inputs:
+      constituer:
+        description: "Reconstituer l'etablissement (efface les donnees)"
+        type: boolean
+        default: false
+
+concurrency:
+  group: neuro-deploy
+  cancel-in-progress: false
+
+jobs:
+  deployer:
+    name: Deployer sur le serveur
+    runs-on: ubuntu-latest
+    environment: "Neuro Prod"
+
+    steps:
+      - name: Deployer
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT || 22 }}
+          command_timeout: 40m
+          script: |
+            set -e
+
+            CIBLE="${{ vars.TARGET_PATH }}"
+
+            # Le depot est clone au premier deploiement: aucune preparation
+            # manuelle du serveur n'est requise.
+            if [ ! -d "$CIBLE/.git" ]; then
+              echo "Premier deploiement: clonage du depot"
+              mkdir -p "$(dirname "$CIBLE")"
+              git clone https://github.com/${{ github.repository }}.git "$CIBLE"
+            fi
+
+            cd "$CIBLE"
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "Construction des images"
+            docker compose build
+
+            echo "Demarrage des services"
+            docker compose up -d
+
+            echo "Attente du noyau"
+            for tentative in $(seq 1 40); do
+              if docker compose exec -T noyau curl --fail --silent \
+                  http://localhost:8000/sante > /dev/null 2>&1; then
+                echo "Noyau disponible"
+                break
+              fi
+              if [ "$tentative" -eq 40 ]; then
+                echo "Le noyau n'a pas repondu"
+                docker compose logs --tail 60 noyau
+                exit 1
+              fi
+              sleep 5
+            done
+
+            if [ "${{ inputs.constituer }}" = "true" ]; then
+              echo "Constitution de l'etablissement"
+              docker compose exec -T noyau python -m scripts.constituer \
+                --profil urbain --jour 2026-08-12
+            fi
+
+            echo ""
+            echo "Etat des services"
+            docker compose ps
+
+            echo ""
+            echo "Adresse publique"
+            sleep 5
+            docker compose logs tunnel 2>&1 \
+              | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' \
+              | tail -1

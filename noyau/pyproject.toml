@@ -3,6 +3,45 @@ name = "hotel-neurosymbolique"
 version = "0.1.0"
 description = "Systeme de raisonnement neuro-symbolique pour l'aide a la decision critique"
 requires-python = ">=3.11"
+dependencies = [
+    "clingo>=5.7",
+    "fastapi>=0.115",
+    "ortools>=9.11",
+    "owlready2>=0.46",
+    "pydantic>=2.9",
+    "sentencepiece>=0.2",
+    "sqlalchemy>=2.0",
+    "torch>=2.5",
+    "transformers>=4.45",
+    "uvicorn[standard]>=0.32",
+]
+
+[project.optional-dependencies]
+dev = [
+    "hypothesis>=6.100",
+    "import-linter>=2.0",
+    "mypy>=1.11",
+    "psutil>=7.0",
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+    "types-psutil",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+# Le paquet est `src` lui-meme, importe sous ce nom (`src.domaine`, ...): sa
+# racine est ce dossier, et non `src/` comme dans la disposition usuelle.
+# Declarer la racine rend l'installation editable lisible par les outils
+# d'analyse, qui ne suivent pas les chargeurs dynamiques de setuptools.
+[tool.setuptools.package-dir]
+"" = "."
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]
 
 [tool.ruff]
 line-length = 88

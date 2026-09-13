@@ -1,0 +1,37 @@
+name: Entrainement du modele
+
+# L'entrainement dure environ trois heures. Il n'est lance qu'a la demande,
+# le modele demeurant ensuite dans un volume que les deploiements ne touchent
+# pas.
+on:
+  workflow_dispatch:
+    inputs:
+      epoques:
+        description: "Nombre d'epoques"
+        default: "3"
+      par_intention:
+        description: "Enonces engendres par intention"
+        default: "400"
+
+jobs:
+  entrainer:
+    name: Entrainer sur le serveur
+    runs-on: ubuntu-latest
+    environment: "Neuro Prod"
+
+    steps:
+      - name: Lancer l'entrainement
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT || 22 }}
+          command_timeout: 300m
+          script: |
+            set -e
+            cd "${{ vars.TARGET_PATH }}"
+            docker compose exec -T noyau python -m scripts.specialiser \
+              --epoques ${{ inputs.epoques }} \
+              --par-intention ${{ inputs.par_intention }}
+            docker compose restart noyau

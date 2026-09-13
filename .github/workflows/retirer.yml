@@ -1,0 +1,31 @@
+name: Retrait du deploiement
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmer:
+        description: "Taper RETIRER pour confirmer"
+        required: true
+
+jobs:
+  retirer:
+    name: Arreter et supprimer
+    runs-on: ubuntu-latest
+    environment: "Neuro Prod"
+    if: inputs.confirmer == 'RETIRER'
+
+    steps:
+      - name: Retirer
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ vars.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd "${{ vars.TARGET_PATH }}"
+            docker compose down --volumes --rmi local
+            cd /
+            rm -rf "${{ vars.TARGET_PATH }}"
+            echo "Deploiement retire"
