@@ -4,23 +4,23 @@
   "mesures": {
     "neuronale": {
       "approche": "neuronale",
-      "conduites_exactes": 10,
-      "intentions_exactes": 12,
-      "intentions_evaluables": 13,
+      "conduites_exactes": 11,
+      "intentions_exactes": 13,
+      "intentions_evaluables": 14,
       "entites_exactes": 13,
       "entites_attendues": 13,
       "references_inexistantes_detectees": 0,
       "references_inexistantes": 2,
       "abstentions_justes": 0,
-      "abstentions_attendues": 4,
+      "abstentions_attendues": 3,
       "abstentions_abusives": 0,
       "total": 16,
-      "duree_moyenne": 106.13013125475845,
+      "duree_moyenne": 91.60353750849026,
       "par_epreuve": [
         {
           "epreuve": "abstention",
           "reussites": 0,
-          "total": 4
+          "total": 3
         },
         {
           "epreuve": "arbitrage",
@@ -29,8 +29,8 @@
         },
         {
           "epreuve": "comprehension",
-          "reussites": 6,
-          "total": 6
+          "reussites": 7,
+          "total": 7
         },
         {
           "epreuve": "contrainte",
@@ -51,23 +51,23 @@
     },
     "symbolique": {
       "approche": "symbolique",
-      "conduites_exactes": 1,
+      "conduites_exactes": 0,
       "intentions_exactes": 0,
-      "intentions_evaluables": 13,
+      "intentions_evaluables": 14,
       "entites_exactes": 0,
       "entites_attendues": 13,
       "references_inexistantes_detectees": 0,
       "references_inexistantes": 2,
-      "abstentions_justes": 1,
-      "abstentions_attendues": 4,
-      "abstentions_abusives": 12,
+      "abstentions_justes": 0,
+      "abstentions_attendues": 3,
+      "abstentions_abusives": 13,
       "total": 16,
-      "duree_moyenne": 0.011837502825073898,
+      "duree_moyenne": 0.009168750693788752,
       "par_epreuve": [
         {
           "epreuve": "abstention",
-          "reussites": 1,
-          "total": 4
+          "reussites": 0,
+          "total": 3
         },
         {
           "epreuve": "arbitrage",
@@ -77,7 +77,7 @@
         {
           "epreuve": "comprehension",
           "reussites": 0,
-          "total": 6
+          "total": 7
         },
         {
           "epreuve": "contrainte",
@@ -98,23 +98,23 @@
     },
     "composee": {
       "approche": "composee",
-      "conduites_exactes": 13,
-      "intentions_exactes": 12,
-      "intentions_evaluables": 13,
+      "conduites_exactes": 16,
+      "intentions_exactes": 13,
+      "intentions_evaluables": 14,
       "entites_exactes": 13,
       "entites_attendues": 13,
       "references_inexistantes_detectees": 2,
       "references_inexistantes": 2,
-      "abstentions_justes": 2,
-      "abstentions_attendues": 4,
-      "abstentions_abusives": 1,
+      "abstentions_justes": 3,
+      "abstentions_attendues": 3,
+      "abstentions_abusives": 0,
       "total": 16,
-      "duree_moyenne": 1489.8937125071825,
+      "duree_moyenne": 1094.047818758554,
       "par_epreuve": [
         {
           "epreuve": "abstention",
-          "reussites": 2,
-          "total": 4
+          "reussites": 3,
+          "total": 3
         },
         {
           "epreuve": "arbitrage",
@@ -123,8 +123,8 @@
         },
         {
           "epreuve": "comprehension",
-          "reussites": 5,
-          "total": 6
+          "reussites": 7,
+          "total": 7
         },
         {
           "epreuve": "contrainte",

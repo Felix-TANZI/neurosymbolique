@@ -16,6 +16,7 @@ from pydantic import BaseModel, Field
 
 from src.api.schemas_incident import ConsequencesRestituees
 from src.api.schemas_interpretation import LectureRestituee
+from src.gouvernance.risque import Appreciation
 from src.orchestration.arbitrage import ArbitrageRendu
 from src.orchestration.consultation import Reponse
 
@@ -98,6 +99,40 @@ class ArbitrageRestitue(BaseModel):
         )
 
 
+class RisqueApprecie(BaseModel):
+    """Niveau de risque etabli et conduite qu'il commande."""
+
+    niveau: int = Field(
+        description="1 mesure, 2 modere, 3 eleve, 4 indetermine",
+        ge=1,
+        le=4,
+    )
+    libelle: str = Field(examples=["modere"])
+    conduite: str
+    appelle_une_verification: bool
+    abstention: str = Field(
+        default="",
+        description="Motif pour lequel aucune proposition n'est etablie",
+    )
+    precision_attendue: str = Field(
+        default="",
+        description="Element que le responsable doit preciser",
+    )
+    motifs: list[str] = Field(default_factory=list)
+
+    @classmethod
+    def depuis(cls, appreciation: Appreciation) -> "RisqueApprecie":
+        return cls(
+            niveau=appreciation.niveau,
+            libelle=appreciation.libelle,
+            conduite=appreciation.conduite,
+            appelle_une_verification=appreciation.appelle_une_verification,
+            abstention=appreciation.abstention,
+            precision_attendue=appreciation.precision_attendue,
+            motifs=list(appreciation.motifs),
+        )
+
+
 class DemandeSoumise(BaseModel):
     """Demande formulee en langue naturelle."""
 
@@ -131,6 +166,10 @@ class ReponseRestituee(BaseModel):
     etat: EtatRestitue | None = None
     arbitrage: ArbitrageRestitue | None = None
     consequences: ConsequencesRestituees | None = None
+    risque: RisqueApprecie | None = Field(
+        default=None,
+        description="Prudence que la situation commande",
+    )
     message: str = Field(
         default="",
         description="Conduite proposee lorsqu'aucun traitement n'est engage.",

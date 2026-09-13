@@ -190,12 +190,13 @@ SCENARIOS: tuple[Scenario, ...] = (
             "plutot que de supposer laquelle."
         ),
     ),
+    # Comprehension d'une consultation du service.
     Scenario(
         identifiant="S-15",
-        enonce="il y a un probleme",
-        epreuve=Epreuve.ABSTENTION.value,
-        conduite=ConduiteAttendue.DEMANDER_CONFIRMATION.value,
-        commentaire="Aucune chambre n'est designee: l'enonce est inexploitable.",
+        enonce="quels agents travaillent aujourd'hui",
+        epreuve=Epreuve.COMPREHENSION.value,
+        conduite=ConduiteAttendue.REPONDRE.value,
+        intention_attendue="consulter_agents",
     ),
     # Arbitrage.
     Scenario(

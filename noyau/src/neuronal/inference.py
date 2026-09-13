@@ -319,16 +319,11 @@ class Interprete:
 def entite_essentielle(attendues: frozenset[TypeDEntite]) -> TypeDEntite | None:
     """Designe l'entite sans laquelle l'intention demeure inexploitable.
 
-    Une intention portant sur une chambre est inexploitable si la chambre
-    demeure inconnue; les autres entites precisent la situation sans la
-    conditionner.
+    Une consultation portant sur un ensemble demeure exploitable sans
+    restriction: demander quels agents travaillent appelle la liste complete,
+    et le secteur ne fait qu'en restreindre l'etendue.
     """
-    for essentielle in (
-        TypeDEntite.CHAMBRE,
-        TypeDEntite.RESERVATION,
-        TypeDEntite.AGENT,
-        TypeDEntite.SECTEUR,
-    ):
+    for essentielle in (TypeDEntite.CHAMBRE, TypeDEntite.RESERVATION):
         if essentielle in attendues:
             return essentielle
     return None

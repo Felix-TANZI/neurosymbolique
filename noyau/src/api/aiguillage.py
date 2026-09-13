@@ -22,8 +22,10 @@ from src.api.schemas_reponse import (
     EtatRestitue,
     NatureDeLaReponse,
     ReponseRestituee,
+    RisqueApprecie,
 )
 from src.domaine import Gravite, TypeIncident
+from src.gouvernance.risque import MotifDAbstention, apprecier
 from src.neuronal.inference import Interpretation
 from src.neuronal.preferences_lues import chambre_concernee, relever_les_preferences
 from src.neuronal.taxonomie import (
@@ -72,39 +74,39 @@ def aiguiller(
     situation que le responsable n'a pas validee.
     """
     lecture = LectureRestituee.depuis(interpretation, modele)
+    appreciation = apprecier(interpretation)
+    risque = RisqueApprecie.depuis(appreciation)
 
-    if not interpretation.intention:
+    if appreciation.appelle_une_abstention:
         return ReponseRestituee(
-            nature=NatureDeLaReponse.HORS_PERIMETRE.value,
+            nature=(
+                NatureDeLaReponse.HORS_PERIMETRE.value
+                if appreciation.abstention == MotifDAbstention.HORS_DOMAINE.value
+                else NatureDeLaReponse.CONFIRMATION_REQUISE.value
+            ),
             lecture=lecture,
-            message="Cet enonce ne releve d'aucune situation que je traite.",
+            risque=risque,
+            message=" ".join(
+                partie
+                for partie in (*appreciation.motifs, appreciation.precision_attendue)
+                if partie
+            ),
         )
 
     intention = Intention(interpretation.intention)
 
-    if intention is Intention.DEMANDE_CONSEIL:
-        return ReponseRestituee(
-            nature=NatureDeLaReponse.HORS_PERIMETRE.value,
-            lecture=lecture,
-            message=CONSEILS_PAR_DEFAUT,
-        )
-
     if intention in INTENTIONS_DE_CONSULTATION:
-        return _consulter(session, interpretation, lecture, jour)
-
-    if not interpretation.est_recevable:
-        return ReponseRestituee(
-            nature=NatureDeLaReponse.CONFIRMATION_REQUISE.value,
-            lecture=lecture,
-            message=(
-                "Confirmez cette lecture avant que le raisonnement ne "
-                "s'engage."
-            ),
-        )
+        return _consulter(session, interpretation, lecture, jour, risque)
 
     if intention is Intention.CONFLIT_AFFECTATION:
         return _arbitrer(
-            session, interpretation, lecture, arbitrage, jour, temps_maximal
+            session,
+            interpretation,
+            lecture,
+            arbitrage,
+            jour,
+            temps_maximal,
+            risque,
         )
 
     if intention.value in INCIDENTS_COMPOSITES:
@@ -115,17 +117,25 @@ def aiguiller(
             traitement,
             jour,
             temps_maximal,
+            risque,
             TYPE_PAR_DEFAUT,
         )
 
     if intention.value in INCIDENTS:
         return _traiter_l_incident(
-            session, interpretation, lecture, traitement, jour, temps_maximal
+            session,
+            interpretation,
+            lecture,
+            traitement,
+            jour,
+            temps_maximal,
+            risque,
         )
 
     return ReponseRestituee(
         nature=NatureDeLaReponse.HORS_PERIMETRE.value,
         lecture=lecture,
+        risque=risque,
         message=(
             f"La situation « {intention.value.replace('_', ' ')} » est reconnue "
             f"mais son traitement n'est pas encore disponible."
@@ -138,6 +148,7 @@ def _consulter(
     interpretation: Interpretation,
     lecture: LectureRestituee,
     jour: date,
+    risque: RisqueApprecie,
 ) -> ReponseRestituee:
     """Conduit une consultation de l'etat."""
     try:
@@ -147,12 +158,14 @@ def _consulter(
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
             lecture=lecture,
+            risque=risque,
             message=str(erreur),
         )
 
     return ReponseRestituee(
         nature=NatureDeLaReponse.CONSULTATION.value,
         lecture=lecture,
+        risque=risque,
         etat=EtatRestitue.depuis(reponse),
     )
 
@@ -164,6 +177,7 @@ def _arbitrer(
     arbitrage: ArbitrerUnConflit,
     jour: date,
     temps_maximal: float | None,
+    risque: RisqueApprecie,
 ) -> ReponseRestituee:
     """Conduit l'arbitrage d'un conflit d'affectation."""
     chambre = interpretation.valeur_de(TypeDEntite.CHAMBRE.value)
@@ -171,6 +185,7 @@ def _arbitrer(
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
             lecture=lecture,
+            risque=risque,
             message="Precisez la chambre sur laquelle porte le conflit.",
         )
 
@@ -180,12 +195,14 @@ def _arbitrer(
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
             lecture=lecture,
+            risque=risque,
             message=str(erreur),
         )
 
     return ReponseRestituee(
         nature=NatureDeLaReponse.ARBITRAGE.value,
         lecture=lecture,
+        risque=risque,
         arbitrage=ArbitrageRestitue.depuis(rendu),
     )
 
@@ -197,6 +214,7 @@ def _traiter_l_incident(
     traitement: TraiterUnIncident,
     jour: date,
     temps_maximal: float | None,
+    risque: RisqueApprecie,
     type_impose: TypeIncident | None = None,
 ) -> ReponseRestituee:
     """Etablit les consequences d'un incident signale.
@@ -212,6 +230,7 @@ def _traiter_l_incident(
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
             lecture=lecture,
+            risque=risque,
             message="Precisez la chambre concernee par l'incident.",
         )
 
@@ -233,11 +252,13 @@ def _traiter_l_incident(
         return ReponseRestituee(
             nature=NatureDeLaReponse.HORS_PERIMETRE.value,
             lecture=lecture,
+            risque=risque,
             message=str(erreur),
         )
 
     return ReponseRestituee(
         nature=NatureDeLaReponse.CONSEQUENCES.value,
         lecture=lecture,
+        risque=risque,
         consequences=ConsequencesRestituees.depuis(consequences),
     )

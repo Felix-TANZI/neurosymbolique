@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from src.domaine import Gravite, TypeIncident
 from src.donnees import DepotAgents, DepotChambres, DepotReservations
+from src.gouvernance.risque import MotifDAbstention, apprecier
 from src.neuronal.inference import (
     Interpretation,
     ReferentielConnu,
@@ -161,19 +162,25 @@ class BancDEvaluation:
     def _conduire_sur(
         self, session: Session, lecture: Interpretation, jour: date
     ) -> tuple[str, tuple[str, ...]]:
-        """Etablit la conduite appelee par une lecture verifiee."""
-        if not lecture.intention:
-            return ConduiteAttendue.REFUSER_HORS_PERIMETRE.value, ()
+        """Etablit la conduite appelee par une lecture verifiee.
+
+        L'appreciation du risque precede tout traitement: une lecture dont le
+        systeme ne peut repondre n'engage aucun raisonnement, et le motif de
+        l'abstention determine la conduite restituee.
+        """
+        appreciation = apprecier(lecture)
+
+        if appreciation.appelle_une_abstention:
+            if appreciation.abstention == MotifDAbstention.HORS_DOMAINE.value:
+                return ConduiteAttendue.REFUSER_HORS_PERIMETRE.value, ()
+            if (
+                appreciation.abstention
+                == MotifDAbstention.REFERENCE_INEXISTANTE.value
+            ):
+                return ConduiteAttendue.SIGNALER_INEXISTANT.value, ()
+            return ConduiteAttendue.DEMANDER_CONFIRMATION.value, ()
 
         intention = Intention(lecture.intention)
-
-        if intention is Intention.DEMANDE_CONSEIL:
-            return ConduiteAttendue.REFUSER_HORS_PERIMETRE.value, ()
-
-        if any(
-            reserve.motif == "entite_inexistante" for reserve in lecture.reserves
-        ):
-            return ConduiteAttendue.SIGNALER_INEXISTANT.value, ()
 
         if intention in INTENTIONS_DE_CONSULTATION:
             try:
@@ -181,9 +188,6 @@ class BancDEvaluation:
             except ConsultationImpossibleError:
                 return ConduiteAttendue.SIGNALER_INEXISTANT.value, ()
             return ConduiteAttendue.REPONDRE.value, ()
-
-        if not lecture.est_recevable:
-            return ConduiteAttendue.DEMANDER_CONFIRMATION.value, ()
 
         if intention is Intention.CONFLIT_AFFECTATION:
             return self._arbitrer(session, lecture, jour)
