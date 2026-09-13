@@ -20,11 +20,17 @@ const EXEMPLES: string[] = [
 interface Proprietes {
   enCours: boolean;
   anomalie: unknown;
+  enonceInitial?: string;
   surSoumission: (enonce: string) => void;
 }
 
-export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
-  const [enonce, setEnonce] = useState("");
+export function Decrire({
+  enCours,
+  anomalie,
+  enonceInitial,
+  surSoumission,
+}: Proprietes) {
+  const [enonce, setEnonce] = useState(enonceInitial ?? "");
 
   const soumettre = () => {
     const texte = enonce.trim();
