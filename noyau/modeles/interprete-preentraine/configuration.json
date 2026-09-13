@@ -1,6 +1,6 @@
 {
-  "nombre_d_intentions": 29,
-  "nombre_d_etiquettes": 23,
+  "nombre_d_intentions": 39,
+  "nombre_d_etiquettes": 29,
   "encodeur": "camembert-base",
   "longueur_maximale": 32,
   "abandon": 0.1,

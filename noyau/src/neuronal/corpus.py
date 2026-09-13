@@ -71,6 +71,19 @@ HEURES_EXPRIMEES: tuple[str, ...] = (
     "en debut d'apres midi",
 )
 
+QUANTITES_EXPRIMEES: tuple[str, ...] = (
+    "2", "3", "4", "5", "6", "8", "10", "12", "15", "20",
+    "deux", "trois", "quatre", "cinq", "six", "huit", "dix", "douze",
+)
+
+EQUIPEMENTS_COMMUNS_EXPRIMES: tuple[str, ...] = (
+    "ascenseur",
+    "chaufferie",
+    "groupe froid",
+    "reseau electrique",
+    "reseau d'eau",
+)
+
 
 class CorpusInvalideError(ValueError):
     """Signale un corpus dont les annotations ne sont pas exploitables."""
@@ -267,6 +280,15 @@ class GenerateurDeCorpus:
             return self._sort.choice(ETAGES_EXPRIMES)
         if type_entite == TypeDEntite.ETAT.value:
             return self._sort.choice(ETATS_EXPRIMES)
+        if type_entite == TypeDEntite.QUANTITE.value:
+            return self._sort.choice(QUANTITES_EXPRIMEES)
+        if type_entite == TypeDEntite.EQUIPEMENT_COMMUN.value:
+            return self._sort.choice(EQUIPEMENTS_COMMUNS_EXPRIMES)
+        if type_entite == TypeDEntite.TECHNICIEN.value:
+            valeurs = self._entites.get(TypeDEntite.TECHNICIEN.value)
+            if not valeurs:
+                return f"T-{self._sort.randint(1, 12):04d}"
+            return self._sort.choice(list(valeurs))
         if type_entite in (
             TypeDEntite.PROXIMITE.value,
             TypeDEntite.ELOIGNEMENT.value,

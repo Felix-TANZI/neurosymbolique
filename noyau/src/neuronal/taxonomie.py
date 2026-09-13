@@ -56,6 +56,22 @@ class Intention(StrEnum):
     SUR_OCCUPATION = "sur_occupation"
     DEMANDE_CONSEIL = "demande_conseil"
 
+    # Housekeeping
+    REPARTIR_CHARGE = "repartir_charge"
+    CONSULTER_CHARGE = "consulter_charge"
+    ESTIMER_FAISABILITE = "estimer_faisabilite"
+
+    # Maintenance
+    SIGNALER_PANNE_TECHNIQUE = "signaler_panne_technique"
+    QUALIFIER_GRAVITE = "qualifier_gravite"
+    PRIORISER_INTERVENTIONS = "prioriser_interventions"
+    AFFECTER_TECHNICIEN = "affecter_technicien"
+    CONSULTER_INTERVENTIONS = "consulter_interventions"
+
+    # Croise
+    INCIDENT_AVEC_INTERVENTION = "incident_avec_intervention"
+    ARBITRER_PRIORITES = "arbitrer_priorites"
+
 
 @unique
 class TypeDEntite(StrEnum):
@@ -72,6 +88,9 @@ class TypeDEntite(StrEnum):
     ETAT = "etat"
     PROXIMITE = "proximite"
     ELOIGNEMENT = "eloignement"
+    TECHNICIEN = "technicien"
+    EQUIPEMENT_COMMUN = "equipement_commun"
+    QUANTITE = "quantite"
 
 
 ETIQUETTE_HORS_ENTITE = "O"
@@ -181,6 +200,22 @@ ENTITES_ATTENDUES: dict[Intention, frozenset[TypeDEntite]] = {
     ),
     Intention.SUR_OCCUPATION: frozenset({TypeDEntite.HEURE}),
     Intention.DEMANDE_CONSEIL: frozenset(),
+    Intention.REPARTIR_CHARGE: frozenset({TypeDEntite.QUANTITE}),
+    Intention.CONSULTER_CHARGE: frozenset({TypeDEntite.SECTEUR}),
+    Intention.ESTIMER_FAISABILITE: frozenset({TypeDEntite.HEURE}),
+    Intention.SIGNALER_PANNE_TECHNIQUE: frozenset(
+        {TypeDEntite.EQUIPEMENT_COMMUN, TypeDEntite.ETAGE}
+    ),
+    Intention.QUALIFIER_GRAVITE: frozenset(
+        {TypeDEntite.CHAMBRE, TypeDEntite.EQUIPEMENT_COMMUN}
+    ),
+    Intention.PRIORISER_INTERVENTIONS: frozenset(),
+    Intention.AFFECTER_TECHNICIEN: frozenset(
+        {TypeDEntite.CHAMBRE, TypeDEntite.TECHNICIEN}
+    ),
+    Intention.CONSULTER_INTERVENTIONS: frozenset(),
+    Intention.INCIDENT_AVEC_INTERVENTION: frozenset({TypeDEntite.CHAMBRE}),
+    Intention.ARBITRER_PRIORITES: frozenset(),
 }
 
 
@@ -194,6 +229,8 @@ INTENTIONS_DE_CONSULTATION: frozenset[Intention] = frozenset(
         Intention.CONSULTER_TACHES,
         Intention.CONSULTER_CHAMBRE,
         Intention.CONSULTER_SEJOUR,
+        Intention.CONSULTER_CHARGE,
+        Intention.CONSULTER_INTERVENTIONS,
     }
 )
 
@@ -204,6 +241,8 @@ INTENTIONS_D_ARBITRAGE: frozenset[Intention] = frozenset(
         Intention.DEMANDE_CONSEIL,
         Intention.DEMANDE_AFFECTATION,
         Intention.DEMANDE_CHANGEMENT,
+        Intention.ARBITRER_PRIORITES,
+        Intention.PRIORISER_INTERVENTIONS,
     }
 )
 
