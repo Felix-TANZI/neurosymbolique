@@ -26,9 +26,11 @@ from src.donnees import (
     DepotAgents,
     DepotChambres,
     DepotIncidents,
+    DepotInterventions,
     DepotReservations,
     DepotSecteurs,
     DepotTaches,
+    DepotTechniciens,
     Etablissement,
     ProfilDEtablissement,
     ValeurDeProfilInvalideError,
@@ -109,6 +111,13 @@ def persister(etablissement: Etablissement, moteur: Engine) -> dict[str, int]:
         session.flush()
         DepotTaches(session).enregistrer_plusieurs(etablissement.taches)
         DepotSecteurs(session).declarer_reserves(etablissement.secteurs_reserves)
+
+        for technicien in etablissement.techniciens:
+            DepotTechniciens(session).enregistrer(technicien)
+        session.flush()
+
+        for intervention in etablissement.interventions:
+            DepotInterventions(session).enregistrer(intervention)
 
     with session_de_travail(fabrique) as session:
         return {
@@ -208,6 +217,9 @@ def executer(arguments: argparse.Namespace) -> int:
         moteur.dispose()
 
     restituer(f"Etablissement constitue: {profil.nom}", mesures)
+    print(f"  techniciens      {len(etablissement.techniciens):4}")
+    print(f"  interventions    {len(etablissement.interventions):4}")
+    print(f"  equipements      {len(etablissement.equipements):4}")
     print(f"\nBase: {adresse}")
     print(f"Jour de reference: {jour.isoformat()}")
     return 0

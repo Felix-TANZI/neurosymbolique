@@ -13,7 +13,6 @@ import { useMutation } from "@tanstack/react-query";
 import {
   Check,
   ChevronDown,
-  CircleAlert,
   Info,
   PenLine,
   RotateCcw,
@@ -26,13 +25,13 @@ import type {
   ConsequencesRestituees,
   EtatRestitue,
   IssueDeDecision,
-  LectureRestituee,
   OptionProposee,
   RelogementPropose,
   ReponseRestituee,
 } from "@/api/contrat";
 import { Carte, EnTeteDeSection, Panneau } from "@/composants/Panneau";
 import { Pastille } from "@/composants/Pastille";
+import { Abstention, Risque } from "@/composants/Risque";
 import { enJourLisible } from "@/etat/jour";
 
 const MOTIFS: Record<string, string> = {
@@ -66,22 +65,20 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
       }),
   });
 
+  if (
+    reponse.risque?.abstention &&
+    (reponse.nature === "hors_perimetre" ||
+      reponse.nature === "confirmation_requise")
+  ) {
+    return (
+      <Panneau>
+        <Abstention risque={reponse.risque} surReprise={surReprise} />
+      </Panneau>
+    );
+  }
+
   if (reponse.nature === "consultation" && reponse.etat) {
     return <Consultation etat={reponse.etat} surReprise={surReprise} />;
-  }
-
-  if (reponse.nature === "hors_perimetre") {
-    return <HorsPerimetre message={reponse.message} surReprise={surReprise} />;
-  }
-
-  if (reponse.nature === "confirmation_requise") {
-    return (
-      <ConfirmationRequise
-        lecture={reponse.lecture}
-        message={reponse.message}
-        surReprise={surReprise}
-      />
-    );
   }
 
   return (
@@ -89,6 +86,12 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
       {reponse.arbitrage ? <Arbitrage arbitrage={reponse.arbitrage} /> : null}
       {reponse.consequences ? (
         <Consequences consequences={reponse.consequences} />
+      ) : null}
+
+      {reponse.risque && reponse.risque.appelle_une_verification ? (
+        <Panneau ton="sourd">
+          <Risque risque={reponse.risque} />
+        </Panneau>
       ) : null}
 
       {consignation.isSuccess ? (
@@ -365,7 +368,7 @@ function Relogement({ relogement }: { relogement: RelogementPropose }) {
       relogement.motifs_dominants.length > 0 ? (
         <ul className="mt-1 flex flex-col gap-1">
           {relogement.motifs_dominants.map((motif) => {
-            const [code, compte] = motif.split(": ");
+            const [code = "", compte] = motif.split(": ");
             const nombre = compte?.replace(" chambres", "") ?? "";
             return (
               <li key={motif} className="text-sm text-service">
@@ -447,80 +450,6 @@ function OptionRetenue({ option }: { option: OptionProposee }) {
         </ul>
       ) : null}
     </li>
-  );
-}
-
-function ConfirmationRequise({
-  lecture,
-  message,
-  surReprise,
-}: {
-  lecture: LectureRestituee;
-  message: string;
-  surReprise: () => void;
-}) {
-  return (
-    <Panneau>
-      <div className="mb-4 flex items-start gap-3">
-        <CircleAlert size={18} className="mt-1 shrink-0 text-attente" />
-        <div>
-          <p className="font-display text-2xl leading-snug">
-            Cette lecture demande verification
-          </p>
-          <p className="mt-1 text-sm text-service">{message}</p>
-        </div>
-      </div>
-
-      <div className="mb-4 rounded-[var(--radius-carte)] bg-accent-sourd p-4">
-        <ul className="flex flex-col gap-2">
-          {lecture.reserves.map((reserve) => (
-            <li
-              key={`${reserve.motif}-${reserve.detail}`}
-              className="text-sm leading-relaxed text-encre"
-            >
-              {reserve.motif === "entite_inexistante"
-                ? `${reserve.detail} n'existe pas dans l'etablissement.`
-                : reserve.motif === "confiance_insuffisante"
-                  ? "Je ne suis pas assure d'avoir compris la situation."
-                  : reserve.motif === "entite_manquante"
-                    ? `Il manque un element indispensable: ${reserve.detail}.`
-                    : reserve.motif}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <button
-        type="button"
-        onClick={surReprise}
-        className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-5 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90"
-      >
-        <RotateCcw size={16} />
-        Reformuler
-      </button>
-    </Panneau>
-  );
-}
-
-function HorsPerimetre({
-  message,
-  surReprise,
-}: {
-  message: string;
-  surReprise: () => void;
-}) {
-  return (
-    <Panneau ton="sourd">
-      <p className="mb-3 text-sm leading-relaxed text-encre">{message}</p>
-      <button
-        type="button"
-        onClick={surReprise}
-        className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:underline"
-      >
-        <RotateCcw size={14} />
-        Reformuler
-      </button>
-    </Panneau>
   );
 }
 

@@ -50,6 +50,18 @@ from src.domaine import (
     TypeIncident,
     TypePrestation,
 )
+from src.domaine.maintenance import (
+    DUREE_PAR_COMPETENCE,
+    Competence,
+    EquipementCommun,
+    IdentifiantTechnicien,
+    Intervention,
+    StatutDIntervention,
+    Technicien,
+    TypeDEquipementCommun,
+    competence_requise,
+    qualifier_la_criticite,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -103,6 +115,26 @@ INCIDENTS_BLOQUANTS: frozenset[TypeIncident] = frozenset(
 CHAMBRES_PAR_AGENT = 15
 COMPETENCE_SUITE = "suite"
 SECTEUR_RESERVE = "presidentielle"
+
+REPARTITION_DES_COMPETENCES: tuple[tuple[Competence, ...], ...] = (
+    (Competence.PLOMBERIE,),
+    (Competence.ELECTRICITE,),
+    (Competence.CLIMATISATION,),
+    (Competence.SERRURERIE, Competence.MENUISERIE),
+    (Competence.POLYVALENT,),
+    (Competence.PLOMBERIE, Competence.ELECTRICITE),
+)
+
+EQUIPEMENTS_PAR_ETAGE: tuple[TypeDEquipementCommun, ...] = (
+    TypeDEquipementCommun.ASCENSEUR,
+)
+
+EQUIPEMENTS_DE_L_ETABLISSEMENT: tuple[TypeDEquipementCommun, ...] = (
+    TypeDEquipementCommun.CHAUFFERIE,
+    TypeDEquipementCommun.GROUPE_FROID,
+    TypeDEquipementCommun.RESEAU_ELECTRIQUE,
+    TypeDEquipementCommun.RESEAU_EAU,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -158,6 +190,9 @@ class Etablissement:
     agents: tuple[tuple[AgentEtage, frozenset[str]], ...] = ()
     taches: tuple[tuple[TacheNettoyage, frozenset[str]], ...] = ()
     secteurs_reserves: tuple[str, ...] = ()
+    techniciens: tuple[Technicien, ...] = ()
+    equipements: tuple[EquipementCommun, ...] = ()
+    interventions: tuple[Intervention, ...] = ()
     jour_de_reference: date = field(default_factory=date.today)
 
     @property
@@ -213,6 +248,10 @@ class GenerateurDEtablissement:
         agents = self._engendrer_agents(sorted(set(secteurs.values())))
         taches = self._engendrer_taches(parc, reservations, reference)
 
+        techniciens = self.engendrer_les_techniciens(len(chambres))
+        equipements = self.engendrer_les_equipements(self._profil.etages, chambres)
+        interventions = self.engendrer_les_interventions(incidents)
+
         etablissement = Etablissement(
             profil=self._profil,
             parc=tuple(parc),
@@ -222,6 +261,9 @@ class GenerateurDEtablissement:
             agents=tuple(agents),
             taches=tuple(taches),
             secteurs_reserves=(SECTEUR_RESERVE,),
+            techniciens=tuple(techniciens),
+            equipements=tuple(equipements),
+            interventions=tuple(interventions),
             jour_de_reference=reference,
         )
         logger.info(
@@ -230,6 +272,100 @@ class GenerateurDEtablissement:
             etablissement.resumer(),
         )
         return etablissement
+
+    def engendrer_les_techniciens(self, chambres: int) -> list[Technicien]:
+        """Constitue l'effectif de maintenance.
+
+        L'effectif est proportionne au parc: un technicien pour quarante
+        chambres environ, avec un minimum de trois afin qu'aucune competence
+        courante ne repose sur un seul agent.
+        """
+        effectif = max(3, chambres // 40)
+        techniciens: list[Technicien] = []
+
+        for rang in range(1, effectif + 1):
+            competences = REPARTITION_DES_COMPETENCES[
+                (rang - 1) % len(REPARTITION_DES_COMPETENCES)
+            ]
+            techniciens.append(
+                Technicien(
+                    identifiant=IdentifiantTechnicien(f"T-{rang:04d}"),
+                    competences=frozenset(competences),
+                    disponible=self._sort.random() > 0.15,
+                    charge_en_cours=self._sort.randint(0, 2),
+                )
+            )
+
+        return techniciens
+
+    def engendrer_les_equipements(
+        self, etages: int, parc: Sequence[Chambre]
+    ) -> list[EquipementCommun]:
+        """Constitue les equipements communs de l'etablissement.
+
+        Un ascenseur par etage, et les equipements desservant l'ensemble du
+        parc. La portee de chacun determine la criticite que sa defaillance
+        confere, ce qui distingue une panne d'ascenseur d'une panne en chambre.
+        """
+        equipements: list[EquipementCommun] = []
+
+        for etage in range(1, etages + 1):
+            desservies = frozenset(
+                chambre.numero for chambre in parc if chambre.etage == etage
+            )
+            equipements.append(
+                EquipementCommun(
+                    identifiant=f"ASC-{etage}",
+                    type_equipement=TypeDEquipementCommun.ASCENSEUR,
+                    chambres_desservies=desservies,
+                    operationnel=True,
+                )
+            )
+
+        toutes = frozenset(chambre.numero for chambre in parc)
+        for type_equipement in EQUIPEMENTS_DE_L_ETABLISSEMENT:
+            equipements.append(
+                EquipementCommun(
+                    identifiant=type_equipement.value.upper()[:3] + "-1",
+                    type_equipement=type_equipement,
+                    chambres_desservies=toutes,
+                    operationnel=True,
+                )
+            )
+
+        return equipements
+
+    def engendrer_les_interventions(
+        self, incidents: Sequence[Incident]
+    ) -> list[Intervention]:
+        """Constitue les interventions appelees par les incidents signales.
+
+        Chaque incident technique appelle une reparation: l'intervention
+        constitue la reponse du service de maintenance, la ou le relogement
+        constitue celle du service des chambres.
+        """
+        interventions: list[Intervention] = []
+
+        for rang, incident in enumerate(incidents, start=1):
+            competence = competence_requise(type_incident=incident.type_incident)
+            criticite = qualifier_la_criticite(
+                incident.type_incident, incident.gravite
+            )
+
+            interventions.append(
+                Intervention(
+                    identifiant=f"I-{rang:05d}",
+                    competence=competence,
+                    criticite=int(criticite),
+                    duree_estimee=DUREE_PAR_COMPETENCE[competence],
+                    chambre=incident.chambre,
+                    signalee_le=incident.signale_le,
+                    statut=StatutDIntervention.A_PLANIFIER.value,
+                    description=incident.description,
+                )
+            )
+
+        return interventions
 
     def _engendrer_parc(self) -> list[tuple[Chambre, str]]:
         """Constitue le parc, ses categories, equipements et voisinages.

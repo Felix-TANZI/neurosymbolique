@@ -28,14 +28,18 @@ from src.domaine import (
     StatutTache,
     TacheNettoyage,
 )
+from src.domaine.maintenance import Intervention, Technicien
 
 from .conversion import (
     competences_d_agent,
     competences_requises,
+    depuis_intervention,
+    depuis_technicien,
     vers_agent,
     vers_chambre,
     vers_client,
     vers_incident,
+    vers_intervention,
     vers_ligne_d_agent,
     vers_ligne_d_incident,
     vers_ligne_de_chambre,
@@ -44,6 +48,7 @@ from .conversion import (
     vers_ligne_de_tache,
     vers_reservation,
     vers_tache,
+    vers_technicien,
 )
 from .modeles import (
     AgentEnregistre,
@@ -51,9 +56,11 @@ from .modeles import (
     ClientEnregistre,
     DecisionConsignee,
     IncidentEnregistre,
+    InterventionEnregistree,
     ReservationEnregistree,
     SecteurReserve,
     TacheEnregistree,
+    TechnicienEnregistre,
 )
 
 logger = logging.getLogger(__name__)
@@ -436,3 +443,68 @@ class JournalDesDecisions:
     def denombrer(self) -> int:
         """Restitue le nombre de decisions consignees."""
         return len(self._session.scalars(select(DecisionConsignee.identifiant)).all())
+
+
+class DepotTechniciens:
+    """Acces aux techniciens de maintenance."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def enregistrer(self, technicien: Technicien) -> None:
+        """Inscrit ou met a jour un technicien."""
+        self._session.merge(depuis_technicien(technicien))
+
+    def lister(self) -> Sequence[Technicien]:
+        """Restitue l'ensemble des techniciens."""
+        enregistres = self._session.scalars(select(TechnicienEnregistre)).all()
+        return [vers_technicien(enregistre) for enregistre in enregistres]
+
+    def lister_disponibles(self) -> Sequence[Technicien]:
+        """Restitue les seuls techniciens affectables."""
+        enregistres = self._session.scalars(
+            select(TechnicienEnregistre).where(
+                TechnicienEnregistre.disponible.is_(True)
+            )
+        ).all()
+        return [vers_technicien(enregistre) for enregistre in enregistres]
+
+    def retrouver(self, identifiant: str) -> Technicien:
+        """Retrouve un technicien, ou signale son absence."""
+        enregistre = self._session.get(TechnicienEnregistre, identifiant)
+        if enregistre is None:
+            raise EntiteIntrouvableError(f"technicien introuvable: {identifiant}")
+        return vers_technicien(enregistre)
+
+
+class DepotInterventions:
+    """Acces aux interventions de maintenance."""
+
+    def __init__(self, session: Session) -> None:
+        self._session = session
+
+    def enregistrer(self, intervention: Intervention) -> None:
+        """Inscrit ou met a jour une intervention."""
+        self._session.merge(depuis_intervention(intervention))
+
+    def lister(self) -> Sequence[Intervention]:
+        """Restitue l'ensemble des interventions."""
+        enregistrees = self._session.scalars(
+            select(InterventionEnregistree).order_by(
+                InterventionEnregistree.criticite.desc(),
+                InterventionEnregistree.signalee_le,
+            )
+        ).all()
+        return [vers_intervention(enregistree) for enregistree in enregistrees]
+
+    def lister_a_planifier(self) -> Sequence[Intervention]:
+        """Restitue les interventions demeurant sans technicien."""
+        enregistrees = self._session.scalars(
+            select(InterventionEnregistree)
+            .where(InterventionEnregistree.statut == "a_planifier")
+            .order_by(
+                InterventionEnregistree.criticite.desc(),
+                InterventionEnregistree.signalee_le,
+            )
+        ).all()
+        return [vers_intervention(enregistree) for enregistree in enregistrees]

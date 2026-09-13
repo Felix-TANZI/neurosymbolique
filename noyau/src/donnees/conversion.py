@@ -10,6 +10,7 @@ reconvertie doit etre identique a l'originale. Toute perte d'information a la
 conversion fausserait le raisonnement ulterieur.
 """
 
+from datetime import timedelta
 from enum import Enum
 
 from src.domaine import (
@@ -40,6 +41,12 @@ from src.domaine import (
     TypeIncident,
     TypePrestation,
 )
+from src.domaine.maintenance import (
+    Competence,
+    IdentifiantTechnicien,
+    Intervention,
+    Technicien,
+)
 
 from .modeles import (
     AgentEnregistre,
@@ -52,8 +59,10 @@ from .modeles import (
     EquipementDeChambre,
     ExigenceDeSejour,
     IncidentEnregistre,
+    InterventionEnregistree,
     ReservationEnregistree,
     TacheEnregistree,
+    TechnicienEnregistre,
 )
 
 
@@ -316,3 +325,69 @@ def competences_d_agent(ligne: AgentEnregistre) -> frozenset[str]:
 def competences_requises(ligne: TacheEnregistree) -> frozenset[str]:
     """Restitue les qualifications exigees par une tache."""
     return frozenset(association.competence for association in ligne.exigences)
+
+
+def vers_technicien(enregistre: TechnicienEnregistre) -> Technicien:
+    """Constitue un technicien a partir de son enregistrement."""
+    return Technicien(
+        identifiant=IdentifiantTechnicien(enregistre.identifiant),
+        competences=frozenset(
+            Competence(nom) for nom in enregistre.competences.split(",") if nom
+        ),
+        disponible=enregistre.disponible,
+        charge_en_cours=enregistre.charge_en_cours,
+    )
+
+
+def depuis_technicien(technicien: Technicien) -> TechnicienEnregistre:
+    """Constitue l'enregistrement d'un technicien."""
+    return TechnicienEnregistre(
+        identifiant=str(technicien.identifiant),
+        competences=",".join(
+            sorted(competence.value for competence in technicien.competences)
+        ),
+        disponible=technicien.disponible,
+        charge_en_cours=technicien.charge_en_cours,
+    )
+
+
+def vers_intervention(enregistree: InterventionEnregistree) -> Intervention:
+    """Constitue une intervention a partir de son enregistrement."""
+    return Intervention(
+        identifiant=enregistree.identifiant,
+        competence=Competence(enregistree.competence),
+        criticite=enregistree.criticite,
+        duree_estimee=timedelta(minutes=enregistree.duree_minutes),
+        chambre=(
+            NumeroChambre(enregistree.chambre) if enregistree.chambre else None
+        ),
+        equipement=enregistree.equipement,
+        signalee_le=enregistree.signalee_le,
+        echeance=enregistree.echeance,
+        statut=enregistree.statut,
+        technicien=(
+            IdentifiantTechnicien(enregistree.technicien)
+            if enregistree.technicien
+            else None
+        ),
+        description=enregistree.description,
+    )
+
+
+def depuis_intervention(intervention: Intervention) -> InterventionEnregistree:
+    """Constitue l'enregistrement d'une intervention."""
+    return InterventionEnregistree(
+        identifiant=intervention.identifiant,
+        competence=intervention.competence.value,
+        criticite=intervention.criticite,
+        duree_minutes=int(intervention.duree_estimee.total_seconds() // 60),
+        chambre=str(intervention.chambre) if intervention.chambre else None,
+        equipement=intervention.equipement,
+        signalee_le=intervention.signalee_le,
+        echeance=intervention.echeance,
+        statut=intervention.statut,
+        technicien=(
+            str(intervention.technicien) if intervention.technicien else None
+        ),
+        description=intervention.description,
+    )

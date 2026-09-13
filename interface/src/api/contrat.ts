@@ -372,12 +372,23 @@ export interface ArbitrageRestitue {
   demande_une_intervention: boolean;
 }
 
+export interface RisqueApprecie {
+  niveau: 1 | 2 | 3 | 4;
+  libelle: string;
+  conduite: string;
+  appelle_une_verification: boolean;
+  abstention: string;
+  precision_attendue: string;
+  motifs: string[];
+}
+
 export interface ReponseRestituee {
   nature: NatureDeLaReponse;
   lecture: LectureRestituee;
   etat: EtatRestitue | null;
   arbitrage: ArbitrageRestitue | null;
   consequences: ConsequencesRestituees | null;
+  risque: RisqueApprecie | null;
   message: string;
 }
 

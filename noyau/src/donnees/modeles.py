@@ -21,6 +21,7 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
+    Text,
     Time,
     UniqueConstraint,
 )
@@ -300,3 +301,47 @@ class DecisionConsignee(Base):
         Index("index_decision_horodatage", "horodatage"),
         Index("index_decision_service", "service", "issue"),
     )
+
+
+class TechnicienEnregistre(Base):
+    """Technicien de maintenance et ses qualifications."""
+
+    __tablename__ = "techniciens"
+
+    identifiant: Mapped[str] = mapped_column(String(32), primary_key=True)
+    competences: Mapped[str] = mapped_column(String(256))
+    disponible: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    charge_en_cours: Mapped[int] = mapped_column(Integer, default=0)
+
+
+class InterventionEnregistree(Base):
+    """Reparation a conduire sur une chambre ou un equipement commun."""
+
+    __tablename__ = "interventions"
+
+    identifiant: Mapped[str] = mapped_column(String(32), primary_key=True)
+    competence: Mapped[str] = mapped_column(String(32), index=True)
+    criticite: Mapped[int] = mapped_column(Integer, index=True)
+    duree_minutes: Mapped[int] = mapped_column(Integer)
+    chambre: Mapped[str | None] = mapped_column(
+        String(16), ForeignKey("chambre.numero"), nullable=True, index=True
+    )
+    equipement: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    signalee_le: Mapped[datetime] = mapped_column(DateTime, index=True)
+    echeance: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    statut: Mapped[str] = mapped_column(String(24), index=True)
+    technicien: Mapped[str | None] = mapped_column(
+        String(32), ForeignKey("techniciens.identifiant"), nullable=True
+    )
+    description: Mapped[str] = mapped_column(Text, default="")
+
+
+class EquipementCommunEnregistre(Base):
+    """Equipement desservant plusieurs chambres."""
+
+    __tablename__ = "equipements_communs"
+
+    identifiant: Mapped[str] = mapped_column(String(32), primary_key=True)
+    type_equipement: Mapped[str] = mapped_column(String(32), index=True)
+    chambres_desservies: Mapped[str] = mapped_column(Text, default="")
+    operationnel: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
