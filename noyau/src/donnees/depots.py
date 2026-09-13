@@ -21,6 +21,7 @@ from src.domaine import (
     AgentEtage,
     Chambre,
     Client,
+    IdentifiantAgent,
     Incident,
     NumeroChambre,
     Periode,
@@ -307,6 +308,18 @@ class DepotAgents:
         ]
         self._session.add_all(lignes)
         return len(lignes)
+
+    def supprimer(self, identifiant: IdentifiantAgent) -> None:
+        """Retire un agent de l'effectif.
+
+        La suppression releve du systeme de gestion et non du systeme d'aide a
+        la decision: elle n'est exposee qu'au simulateur, qui tient le role de
+        ce premier.
+        """
+        enregistre = self._session.get(AgentEnregistre, str(identifiant))
+        if enregistre is None:
+            raise EntiteIntrouvableError(f"agent introuvable: {identifiant}")
+        self._session.delete(enregistre)
 
 
 class DepotTaches:

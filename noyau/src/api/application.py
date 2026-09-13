@@ -40,8 +40,10 @@ from src.api.schemas_consultation import (
     DemandeParReference,
     EtatDeLEtablissement,
     IncidentConsulte,
+    InterventionConsultee,
     ReservationConsultee,
     TacheConsultee,
+    TechnicienConsulte,
 )
 from src.api.schemas_housekeeping import (
     AffectationSortante,
@@ -53,13 +55,16 @@ from src.api.schemas_housekeeping import (
 from src.api.schemas_incident import ConsequencesRestituees, IncidentSignale
 from src.api.schemas_journal import DecisionConsultee, DecisionSoumise
 from src.api.schemas_reponse import DemandeSoumise, ReponseRestituee
+from src.api.simulation import routeur
 from src.domaine import Periode
 from src.donnees import (
     DepotAgents,
     DepotChambres,
     DepotIncidents,
+    DepotInterventions,
     DepotReservations,
     DepotTaches,
+    DepotTechniciens,
     EntiteIntrouvableError,
 )
 from src.gouvernance import GabaritIntrouvableError
@@ -121,6 +126,7 @@ def creer_application() -> FastAPI:
         description=DESCRIPTION,
         version="0.2.0",
     )
+    application.include_router(routeur)
 
     @application.get("/", include_in_schema=False)
     def racine() -> RedirectResponse:
@@ -254,6 +260,36 @@ def creer_application() -> FastAPI:
         return [
             IncidentConsulte.depuis(incident)
             for incident in DepotIncidents(session).lister_ouverts()
+        ]
+
+    @application.get(
+        "/techniciens",
+        response_model=list[TechnicienConsulte],
+        summary="Consulter l'effectif de maintenance",
+        tags=["consultation"],
+    )
+    def consulter_les_techniciens(
+        session: SessionDeBase,
+    ) -> list[TechnicienConsulte]:
+        """Restitue les techniciens et leurs qualifications."""
+        return [
+            TechnicienConsulte.depuis(technicien)
+            for technicien in DepotTechniciens(session).lister()
+        ]
+
+    @application.get(
+        "/interventions",
+        response_model=list[InterventionConsultee],
+        summary="Consulter les interventions enregistrees",
+        tags=["consultation"],
+    )
+    def consulter_les_interventions(
+        session: SessionDeBase,
+    ) -> list[InterventionConsultee]:
+        """Restitue les interventions, de la plus critique a la moins."""
+        return [
+            InterventionConsultee.depuis(intervention)
+            for intervention in DepotInterventions(session).lister()
         ]
 
     @application.post(

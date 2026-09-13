@@ -17,6 +17,7 @@ from src.domaine import (
     Reservation,
     TacheNettoyage,
 )
+from src.domaine.maintenance import Intervention, Technicien
 
 
 class ChambreConsultee(BaseModel):
@@ -185,6 +186,54 @@ class IncidentConsulte(BaseModel):
             signale_le=incident.signale_le.isoformat(),
             description=incident.description,
             resolu=incident.resolu,
+        )
+
+
+class TechnicienConsulte(BaseModel):
+    """Technicien de maintenance et ses qualifications."""
+
+    identifiant: str
+    competences: list[str]
+    disponible: bool
+    charge_en_cours: int
+
+    @classmethod
+    def depuis(cls, technicien: Technicien) -> "TechnicienConsulte":
+        return cls(
+            identifiant=str(technicien.identifiant),
+            competences=sorted(
+                competence.value for competence in technicien.competences
+            ),
+            disponible=technicien.disponible,
+            charge_en_cours=technicien.charge_en_cours,
+        )
+
+
+class InterventionConsultee(BaseModel):
+    """Reparation enregistree et son avancement."""
+
+    identifiant: str
+    objet: str
+    competence: str
+    criticite: int
+    statut: str
+    technicien: str | None
+    duree_minutes: int
+
+    @classmethod
+    def depuis(cls, intervention: Intervention) -> "InterventionConsultee":
+        return cls(
+            identifiant=intervention.identifiant,
+            objet=intervention.objet,
+            competence=intervention.competence.value,
+            criticite=intervention.criticite,
+            statut=intervention.statut,
+            technicien=(
+                str(intervention.technicien) if intervention.technicien else None
+            ),
+            duree_minutes=int(
+                intervention.duree_estimee.total_seconds() // 60
+            ),
         )
 
 
