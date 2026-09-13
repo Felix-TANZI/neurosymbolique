@@ -18,7 +18,13 @@ from datetime import date
 from sqlalchemy.orm import Session
 
 from src.domaine import Gravite, TypeIncident
-from src.donnees import DepotAgents, DepotChambres, DepotReservations
+from src.donnees import (
+    DepotAgents,
+    DepotChambres,
+    DepotInterventions,
+    DepotReservations,
+    DepotTechniciens,
+)
 from src.gouvernance.risque import MotifDAbstention, apprecier
 from src.neuronal.inference import (
     Interpretation,
@@ -28,11 +34,18 @@ from src.neuronal.inference import (
 )
 from src.neuronal.inference_preentrainee import InterpretePreentraineDEnonces
 from src.neuronal.preferences_lues import chambre_concernee, relever_les_preferences
+from src.neuronal.quantites_lues import relever_les_quantites
 from src.neuronal.taxonomie import INTENTIONS_DE_CONSULTATION, Intention, TypeDEntite
-from src.orchestration import SignalementDIncident, TraiterUnIncident
+from src.orchestration import (
+    RepartirUneCharge,
+    RepartitionImpossibleError,
+    SignalementDIncident,
+    TraiterUnIncident,
+)
 from src.orchestration.arbitrage import ArbitrerUnConflit, NatureDuConflit
 from src.orchestration.composition import SituationIncompleteError
 from src.orchestration.consultation import ConsultationImpossibleError, consulter
+from src.orchestration.maintenance import AffecterLesInterventions
 
 from .approches import Approche, Conduite
 from .scenarios import ConduiteAttendue, Scenario
@@ -182,18 +195,49 @@ class BancDEvaluation:
 
         intention = Intention(lecture.intention)
 
+        if intention is Intention.CONFLIT_AFFECTATION:
+            return self._arbitrer(session, lecture, jour)
+
+        if lecture.intention in INCIDENTS or lecture.intention in COMPOSITES:
+            return self._traiter(session, lecture, jour)
+
+        if intention is Intention.REPARTIR_CHARGE:
+            lue = relever_les_quantites(lecture)
+            if not lue.est_exploitable:
+                return ConduiteAttendue.DEMANDER_CONFIRMATION.value, ()
+            try:
+                RepartirUneCharge().executer(lue.charge or 0, lue.effectif or 0)
+            except RepartitionImpossibleError:
+                return ConduiteAttendue.REFUSER_HORS_PERIMETRE.value, ()
+            return ConduiteAttendue.REPARTIR.value, ()
+
+        if intention is Intention.CONSULTER_CHARGE:
+            return ConduiteAttendue.REPARTIR.value, ()
+
+        if intention in {
+            Intention.PRIORISER_INTERVENTIONS,
+            Intention.AFFECTER_TECHNICIEN,
+            Intention.CONSULTER_INTERVENTIONS,
+            Intention.ARBITRER_PRIORITES,
+        }:
+            AffecterLesInterventions().executer(
+                list(DepotInterventions(session).lister()),
+                list(DepotTechniciens(session).lister()),
+            )
+            return ConduiteAttendue.PLANIFIER_LES_INTERVENTIONS.value, ()
+
+        if intention is Intention.SIGNALER_PANNE_TECHNIQUE:
+            return ConduiteAttendue.PROPOSER.value, ()
+
+        # La consultation vient en dernier: les intentions qu'elle ne traite
+        # pas ont deja ete aiguillees, et un echec signale ici une reference
+        # reellement introuvable.
         if intention in INTENTIONS_DE_CONSULTATION:
             try:
                 consulter(session, lecture, jour)
             except ConsultationImpossibleError:
                 return ConduiteAttendue.SIGNALER_INEXISTANT.value, ()
             return ConduiteAttendue.REPONDRE.value, ()
-
-        if intention is Intention.CONFLIT_AFFECTATION:
-            return self._arbitrer(session, lecture, jour)
-
-        if lecture.intention in INCIDENTS or lecture.intention in COMPOSITES:
-            return self._traiter(session, lecture, jour)
 
         return ConduiteAttendue.REFUSER_HORS_PERIMETRE.value, ()
 

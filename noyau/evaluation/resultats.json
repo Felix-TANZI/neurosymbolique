@@ -1,21 +1,21 @@
 {
   "jour": "2026-08-12",
-  "scenarios": 16,
+  "scenarios": 24,
   "mesures": {
     "neuronale": {
       "approche": "neuronale",
       "conduites_exactes": 11,
-      "intentions_exactes": 13,
-      "intentions_evaluables": 14,
-      "entites_exactes": 13,
-      "entites_attendues": 13,
+      "intentions_exactes": 20,
+      "intentions_evaluables": 21,
+      "entites_exactes": 17,
+      "entites_attendues": 17,
       "references_inexistantes_detectees": 0,
       "references_inexistantes": 2,
       "abstentions_justes": 0,
-      "abstentions_attendues": 3,
+      "abstentions_attendues": 4,
       "abstentions_abusives": 0,
-      "total": 16,
-      "duree_moyenne": 91.60353750849026,
+      "total": 24,
+      "duree_moyenne": 84.68229999076964,
       "par_epreuve": [
         {
           "epreuve": "abstention",
@@ -24,7 +24,7 @@
         },
         {
           "epreuve": "arbitrage",
-          "reussites": 1,
+          "reussites": 0,
           "total": 1
         },
         {
@@ -38,6 +38,11 @@
           "total": 1
         },
         {
+          "epreuve": "maintenance",
+          "reussites": 1,
+          "total": 5
+        },
+        {
           "epreuve": "preference",
           "reussites": 2,
           "total": 2
@@ -46,23 +51,28 @@
           "epreuve": "reference",
           "reussites": 0,
           "total": 2
+        },
+        {
+          "epreuve": "repartition",
+          "reussites": 0,
+          "total": 3
         }
       ]
     },
     "symbolique": {
       "approche": "symbolique",
-      "conduites_exactes": 0,
+      "conduites_exactes": 1,
       "intentions_exactes": 0,
-      "intentions_evaluables": 14,
+      "intentions_evaluables": 21,
       "entites_exactes": 0,
-      "entites_attendues": 13,
+      "entites_attendues": 17,
       "references_inexistantes_detectees": 0,
       "references_inexistantes": 2,
-      "abstentions_justes": 0,
-      "abstentions_attendues": 3,
-      "abstentions_abusives": 13,
-      "total": 16,
-      "duree_moyenne": 0.009168750693788752,
+      "abstentions_justes": 1,
+      "abstentions_attendues": 4,
+      "abstentions_abusives": 20,
+      "total": 24,
+      "duree_moyenne": 0.005500000649287055,
       "par_epreuve": [
         {
           "epreuve": "abstention",
@@ -85,6 +95,11 @@
           "total": 1
         },
         {
+          "epreuve": "maintenance",
+          "reussites": 0,
+          "total": 5
+        },
+        {
           "epreuve": "preference",
           "reussites": 0,
           "total": 2
@@ -93,23 +108,28 @@
           "epreuve": "reference",
           "reussites": 0,
           "total": 2
+        },
+        {
+          "epreuve": "repartition",
+          "reussites": 1,
+          "total": 3
         }
       ]
     },
     "composee": {
       "approche": "composee",
-      "conduites_exactes": 16,
-      "intentions_exactes": 13,
-      "intentions_evaluables": 14,
-      "entites_exactes": 13,
-      "entites_attendues": 13,
+      "conduites_exactes": 23,
+      "intentions_exactes": 20,
+      "intentions_evaluables": 21,
+      "entites_exactes": 17,
+      "entites_attendues": 17,
       "references_inexistantes_detectees": 2,
       "references_inexistantes": 2,
       "abstentions_justes": 3,
-      "abstentions_attendues": 3,
+      "abstentions_attendues": 4,
       "abstentions_abusives": 0,
-      "total": 16,
-      "duree_moyenne": 1094.047818758554,
+      "total": 24,
+      "duree_moyenne": 882.778154174351,
       "par_epreuve": [
         {
           "epreuve": "abstention",
@@ -132,6 +152,11 @@
           "total": 1
         },
         {
+          "epreuve": "maintenance",
+          "reussites": 5,
+          "total": 5
+        },
+        {
           "epreuve": "preference",
           "reussites": 2,
           "total": 2
@@ -140,6 +165,11 @@
           "epreuve": "reference",
           "reussites": 2,
           "total": 2
+        },
+        {
+          "epreuve": "repartition",
+          "reussites": 2,
+          "total": 3
         }
       ]
     }

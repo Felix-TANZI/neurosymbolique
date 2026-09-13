@@ -112,9 +112,6 @@ def aiguiller(
 
     intention = Intention(interpretation.intention)
 
-    if intention in INTENTIONS_DE_CONSULTATION:
-        return _consulter(session, interpretation, lecture, jour, risque)
-
     if intention is Intention.CONFLIT_AFFECTATION:
         return _arbitrer(
             session,
@@ -175,6 +172,12 @@ def aiguiller(
 
     if intention is Intention.ARBITRER_PRIORITES:
         return _planifier_les_interventions(session, lecture, risque)
+
+    # La consultation vient en dernier: les intentions qu'elle ne traite pas
+    # ont deja ete aiguillees, et un echec signale ici une reference reellement
+    # introuvable.
+    if intention in INTENTIONS_DE_CONSULTATION:
+        return _consulter(session, interpretation, lecture, jour, risque)
 
     return ReponseRestituee(
         nature=NatureDeLaReponse.HORS_PERIMETRE.value,

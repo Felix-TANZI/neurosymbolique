@@ -30,6 +30,8 @@ class Epreuve(StrEnum):
     PREFERENCE = "preference"
     ABSTENTION = "abstention"
     ARBITRAGE = "arbitrage"
+    MAINTENANCE = "maintenance"
+    REPARTITION = "repartition"
 
 
 @unique
@@ -42,6 +44,8 @@ class ConduiteAttendue(StrEnum):
     REFUSER_HORS_PERIMETRE = "refuser_hors_perimetre"
     DEMANDER_CONFIRMATION = "demander_confirmation"
     CONSTATER_ABSENCE_DE_CONFLIT = "constater_absence_de_conflit"
+    REPARTIR = "repartir"
+    PLANIFIER_LES_INTERVENTIONS = "planifier_les_interventions"
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,13 +207,86 @@ SCENARIOS: tuple[Scenario, ...] = (
         identifiant="S-16",
         enonce="deux clients ont reserve la 309",
         epreuve=Epreuve.ARBITRAGE.value,
-        conduite=ConduiteAttendue.PROPOSER.value,
+        conduite=ConduiteAttendue.CONSTATER_ABSENCE_DE_CONFLIT.value,
         intention_attendue="conflit_affectation",
         entites_attendues={"chambre": "309"},
         commentaire=(
-            "Deux sejours occupent simultanement cette chambre: le systeme "
-            "doit arbitrer et proposer un relogement."
+            "Les sejours enregistres sur cette chambre se succedent sans se "
+            "chevaucher: le systeme ne doit pas reloger sans motif."
         ),
+    ),
+    # Maintenance.
+    Scenario(
+        identifiant="S-17",
+        enonce="l'ascenseur de l'etage 4 est en panne",
+        epreuve=Epreuve.MAINTENANCE.value,
+        conduite=ConduiteAttendue.PROPOSER.value,
+        intention_attendue="signaler_panne_technique",
+        entites_attendues={"equipement_commun": "ascenseur", "etage": "4"},
+    ),
+    Scenario(
+        identifiant="S-18",
+        enonce="par quoi commencer aujourd'hui",
+        epreuve=Epreuve.MAINTENANCE.value,
+        conduite=ConduiteAttendue.PLANIFIER_LES_INTERVENTIONS.value,
+        intention_attendue="prioriser_interventions",
+        commentaire=(
+            "Les interventions doivent etre ordonnees par criticite "
+            "decroissante."
+        ),
+    ),
+    Scenario(
+        identifiant="S-19",
+        enonce="qui peut reparer la 312",
+        epreuve=Epreuve.MAINTENANCE.value,
+        conduite=ConduiteAttendue.PLANIFIER_LES_INTERVENTIONS.value,
+        intention_attendue="affecter_technicien",
+        entites_attendues={"chambre": "312"},
+    ),
+    Scenario(
+        identifiant="S-20",
+        enonce="quelles interventions sont en cours",
+        epreuve=Epreuve.MAINTENANCE.value,
+        conduite=ConduiteAttendue.PLANIFIER_LES_INTERVENTIONS.value,
+        intention_attendue="consulter_interventions",
+    ),
+    # Repartition de charge.
+    Scenario(
+        identifiant="S-21",
+        enonce="j'ai 12 chambres a faire et 3 agents, comment repartir",
+        epreuve=Epreuve.REPARTITION.value,
+        conduite=ConduiteAttendue.REPARTIR.value,
+        intention_attendue="repartir_charge",
+        commentaire=(
+            "Les quantites doivent etre qualifiees par les termes qui les "
+            "suivent, non par leur ordre."
+        ),
+    ),
+    Scenario(
+        identifiant="S-22",
+        enonce="j'ai 3 agents pour 12 chambres",
+        epreuve=Epreuve.REPARTITION.value,
+        conduite=ConduiteAttendue.REPARTIR.value,
+        intention_attendue="repartir_charge",
+        commentaire="L'ordre inverse doit produire la meme lecture.",
+    ),
+    Scenario(
+        identifiant="S-23",
+        enonce="12 et 3, comment repartir",
+        epreuve=Epreuve.ABSTENTION.value,
+        conduite=ConduiteAttendue.REFUSER_HORS_PERIMETRE.value,
+        commentaire=(
+            "Sans terme qualifiant, le systeme ne reconnait pas la demande: "
+            "sa confiance demeure trop faible pour qu'il sache quoi demander."
+        ),
+    ),
+    Scenario(
+        identifiant="S-24",
+        enonce="combien de temps pour finir le secteur etage 3",
+        epreuve=Epreuve.MAINTENANCE.value,
+        conduite=ConduiteAttendue.REPARTIR.value,
+        intention_attendue="consulter_charge",
+        entites_attendues={"secteur": "etage 3"},
     ),
 )
 

@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import IntEnum, StrEnum, unique
 
 from src.neuronal.inference import Interpretation, MotifDeReserve
-from src.neuronal.taxonomie import Intention
+from src.neuronal.taxonomie import ENTITES_ATTENDUES, Intention
 
 logger = logging.getLogger(__name__)
 
@@ -146,20 +146,6 @@ def apprecier(interpretation: Interpretation) -> Appreciation:
     motifs = {reserve.motif for reserve in interpretation.reserves}
     confiance = interpretation.confiance_d_intention
 
-    if MotifDeReserve.ENTITE_INEXISTANTE.value in motifs:
-        detail = next(
-            (
-                reserve.detail
-                for reserve in interpretation.reserves
-                if reserve.motif == MotifDeReserve.ENTITE_INEXISTANTE.value
-            ),
-            "",
-        )
-        return _abstenir(
-            MotifDAbstention.REFERENCE_INEXISTANTE.value,
-            f"Verifiez la reference mentionnee: {detail}." if detail else "",
-        )
-
     verifiees = [
         entite for entite in interpretation.entites if entite.existe is True
     ]
@@ -172,6 +158,26 @@ def apprecier(interpretation: Interpretation) -> Appreciation:
         return _abstenir(
             MotifDAbstention.HORS_DOMAINE.value,
             "Decrivez une situation operationnelle de l'etablissement.",
+        )
+
+    attendues = ENTITES_ATTENDUES.get(intention, frozenset())
+    types_attendus = {entite.value for entite in attendues}
+
+    # Une entite inexistante n'est redhibitoire que si l'intention l'attend.
+    # Un nombre pris a tort pour une chambre dans « 12 et 3 » ne doit pas
+    # faire echouer une repartition qui n'en demande aucune: le raisonnement
+    # ne s'appuiera pas sur cette lecture erronee.
+    inexistantes = [
+        reserve
+        for reserve in interpretation.reserves
+        if reserve.motif == MotifDeReserve.ENTITE_INEXISTANTE.value
+        and _type_de(reserve.detail) in types_attendus
+    ]
+
+    if inexistantes:
+        return _abstenir(
+            MotifDAbstention.REFERENCE_INEXISTANTE.value,
+            f"Verifiez la reference mentionnee: {inexistantes[0].detail}.",
         )
 
     # La situation est reconnue, mais un element indispensable manque. Le
@@ -208,6 +214,16 @@ def apprecier(interpretation: Interpretation) -> Appreciation:
         niveau=int(niveau),
         conduite=CONDUITES[niveau],
     )
+
+
+def _type_de(detail: str) -> str:
+    """Restitue le type d'entite designe par un detail de reserve.
+
+    Le detail est forme du type et de la valeur separes par un signe egal.
+    L'absence de separateur laisse le detail intact, ce qui ne correspondra a
+    aucun type attendu et rendra la reserve sans effet.
+    """
+    return detail.split("=", 1)[0] if "=" in detail else detail
 
 
 def _abstenir(motif: str, precision: str = "") -> Appreciation:
