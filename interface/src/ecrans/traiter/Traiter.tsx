@@ -19,7 +19,7 @@ export function Traiter() {
   });
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 sm:gap-5">
       <Decrire
         enCours={demande.isPending}
         anomalie={demande.error}

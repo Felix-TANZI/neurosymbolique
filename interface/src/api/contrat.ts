@@ -226,6 +226,23 @@ export interface IncidentConsulte {
   resolu: boolean;
 }
 
+export interface TechnicienConsulte {
+  identifiant: string;
+  competences: string[];
+  disponible: boolean;
+  charge_en_cours: number;
+}
+
+export interface InterventionConsultee {
+  identifiant: string;
+  objet: string;
+  competence: string;
+  criticite: number;
+  statut: string;
+  technicien: string | null;
+  duree_minutes: number;
+}
+
 export interface EtatDeLEtablissement {
   jour: string;
   chambres: number;
@@ -435,6 +452,30 @@ export interface ReponseRestituee {
   plan: PlanRestitue | null;
   risque: RisqueApprecie | null;
   message: string;
+}
+
+/* Simulateur du systeme de gestion */
+
+export interface EtatDeChambreModifie {
+  etat_proprete?: EtatProprete | null;
+  etat_technique?: EtatTechnique | null;
+  etat_occupation?: EtatOccupation | null;
+}
+
+export interface AgentAjoute {
+  identifiant: string;
+  secteur: string;
+  disponible?: boolean;
+}
+
+export interface DisponibiliteModifiee {
+  disponible: boolean;
+}
+
+export interface ModificationConfirmee {
+  objet: string;
+  modification: string;
+  etat_courant: Record<string, string>;
 }
 
 /* Journal des decisions */

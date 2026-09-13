@@ -40,116 +40,152 @@ export function Aujourdhui() {
   const aTraiter =
     (arrivees.data?.length ?? 0) + (incidents.data?.length ?? 0);
 
+  const avecIncidents = Boolean(incidents.data && incidents.data.length > 0);
+  const avecArrivees = Boolean(arrivees.data && arrivees.data.length > 0);
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 sm:gap-5">
       <Panneau ton="encre">
-        <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-creme/60">
-          Journee du {enJourLisible(jour)}
-        </p>
-        <p className="font-display text-[var(--text-enorme)] leading-none text-accent">
-          {aTraiter}
-        </p>
-        <p className="mt-2 font-display text-2xl text-creme">
-          {aTraiter === 0
-            ? "Rien ne demande votre decision"
-            : aTraiter === 1
-              ? "situation demande votre decision"
-              : "situations demandent votre decision"}
-        </p>
+        <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-creme/60">
+              Journee du {enJourLisible(jour)}
+            </p>
+            <div className="flex items-end gap-3 md:block">
+              <p className="font-display text-[var(--text-enorme)] leading-none text-accent">
+                {aTraiter}
+              </p>
+              <p className="pb-1 font-display text-base leading-snug text-creme sm:text-xl md:mt-2 md:pb-0 lg:text-2xl">
+                {aTraiter === 0
+                  ? "Rien ne demande votre decision"
+                  : aTraiter === 1
+                    ? "situation demande votre decision"
+                    : "situations demandent votre decision"}
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/traiter"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-5 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 md:w-auto md:px-6"
+          >
+            <Sparkles size={16} />
+            Decrire une situation
+          </Link>
+        </div>
 
         {etat.data ? (
-          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-creme/70">
-            {etat.data.disponibles} chambres sont libres et pretes sur les{" "}
-            {etat.data.chambres} de l'etablissement.{" "}
-            {etat.data.agents_affectables} agents sont en service.
-          </p>
+          <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 sm:max-w-xl sm:gap-4">
+            <Indicateur
+              valeur={etat.data.disponibles}
+              libelle={`libres sur ${etat.data.chambres}`}
+            />
+            <Indicateur
+              valeur={etat.data.agents_affectables}
+              libelle="agents en service"
+            />
+            <Indicateur
+              valeur={etat.data.taches_a_planifier}
+              libelle="taches en attente"
+            />
+          </div>
         ) : null}
-
-        <Link
-          to="/traiter"
-          className="mt-5 inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90"
-        >
-          <Sparkles size={16} />
-          Decrire une situation
-        </Link>
       </Panneau>
 
-      {incidents.data && incidents.data.length > 0 ? (
-        <Panneau ton="sourd">
-          <EnTeteDeSection
-            eyebrow="Incidents"
-            titre="Chambres immobilisees"
-            action={
-              <Pastille nature="attente">{incidents.data.length}</Pastille>
-            }
-          />
-          <div className="grid gap-3 md:grid-cols-2">
-            {incidents.data.slice(0, 6).map((incident) => (
-              <Carte key={incident.identifiant}>
-                <div className="flex items-start gap-3">
-                  <TriangleAlert size={16} className="mt-1 shrink-0 text-accent" />
-                  <div>
-                    <p className="font-display text-lg">
-                      Chambre {incident.chambre}
-                    </p>
-                    <p className="text-sm text-service">
-                      {incident.type_incident.replace(/_/g, " ")}
-                    </p>
-                  </div>
-                </div>
-              </Carte>
-            ))}
-          </div>
-        </Panneau>
-      ) : null}
+      {avecIncidents || avecArrivees ? (
+        <div
+          className={[
+            "grid items-start gap-3 sm:gap-5",
+            avecIncidents && avecArrivees
+              ? "lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]"
+              : "",
+          ].join(" ")}
+        >
+          {incidents.data && avecIncidents ? (
+            <Panneau ton="sourd">
+              <EnTeteDeSection
+                eyebrow="Incidents"
+                titre="Chambres immobilisees"
+                action={
+                  <Pastille nature="attente">{incidents.data.length}</Pastille>
+                }
+              />
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-2">
+                {incidents.data.slice(0, 6).map((incident) => (
+                  <Carte key={incident.identifiant}>
+                    <div className="flex items-start gap-2 sm:gap-3">
+                      <TriangleAlert
+                        size={15}
+                        className="mt-0.5 shrink-0 text-accent"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-display text-base leading-tight sm:text-lg">
+                          {incident.chambre}
+                        </p>
+                        <p className="text-xs text-service sm:text-sm">
+                          {incident.type_incident.replace(/_/g, " ")}
+                        </p>
+                      </div>
+                    </div>
+                  </Carte>
+                ))}
+              </div>
+            </Panneau>
+          ) : null}
 
-      {arrivees.data && arrivees.data.length > 0 ? (
-        <Panneau>
-          <EnTeteDeSection
-            eyebrow="Arrivees"
-            titre="Clients sans chambre attribuee"
-            action={<Pastille nature="accent">{arrivees.data.length}</Pastille>}
-          />
-          <div className="grid gap-3 md:grid-cols-2">
-            {arrivees.data.map((sejour) => (
-              <Carte key={sejour.identifiant}>
-                <div className="mb-2 flex items-start gap-3">
-                  <BedDouble size={16} className="mt-1 shrink-0 text-service" />
-                  <div>
-                    <p className="font-display text-lg leading-snug">
-                      {sejour.identifiant}
-                    </p>
-                    <p className="text-sm text-service">
-                      {sejour.nombre_personnes} personne
-                      {sejour.nombre_personnes > 1 ? "s" : ""}, arrivee{" "}
-                      {enHeureLisible(sejour.heure_arrivee_prevue)}
-                      {sejour.arrivee_anticipee ? ", avant l'heure garantie" : ""}
-                    </p>
-                  </div>
-                </div>
+          {arrivees.data && avecArrivees ? (
+            <Panneau>
+              <EnTeteDeSection
+                eyebrow="Arrivees"
+                titre="Clients sans chambre attribuee"
+                action={
+                  <Pastille nature="accent">{arrivees.data.length}</Pastille>
+                }
+              />
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
+                {arrivees.data.map((sejour) => (
+                  <Carte key={sejour.identifiant} className="flex flex-col">
+                    <div className="mb-2 flex items-start gap-2 sm:gap-3">
+                      <BedDouble
+                        size={15}
+                        className="mt-0.5 hidden shrink-0 text-service sm:block"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate font-display text-base leading-snug sm:text-lg">
+                          {sejour.identifiant}
+                        </p>
+                        <p className="text-xs text-service sm:text-sm">
+                          {sejour.nombre_personnes} pers. ·{" "}
+                          {enHeureLisible(sejour.heure_arrivee_prevue)}
+                          {sejour.arrivee_anticipee ? " · anticipee" : ""}
+                        </p>
+                      </div>
+                    </div>
 
-                {sejour.exigences_obligatoires.length > 0 ? (
-                  <ListeDePastilles>
-                    {sejour.exigences_obligatoires.map((equipement) => (
-                      <Pastille key={equipement} nature="accent">
-                        {equipement.replace(/_/g, " ")}
-                      </Pastille>
-                    ))}
-                  </ListeDePastilles>
-                ) : null}
+                    {sejour.exigences_obligatoires.length > 0 ? (
+                      <ListeDePastilles>
+                        {sejour.exigences_obligatoires.map((equipement) => (
+                          <Pastille key={equipement} nature="accent">
+                            {equipement.replace(/_/g, " ")}
+                          </Pastille>
+                        ))}
+                      </ListeDePastilles>
+                    ) : null}
 
-                <Link
-                  to="/traiter"
-                  state={{ reference: sejour.identifiant }}
-                  className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-accent hover:underline"
-                >
-                  Trouver une chambre
-                  <ArrowRight size={14} />
-                </Link>
-              </Carte>
-            ))}
-          </div>
-        </Panneau>
+                    <Link
+                      to="/traiter"
+                      state={{ reference: sejour.identifiant }}
+                      className="mt-auto inline-flex items-center gap-1.5 pt-3 text-xs font-medium text-accent hover:underline sm:text-sm"
+                    >
+                      Trouver une chambre
+                      <ArrowRight size={14} />
+                    </Link>
+                  </Carte>
+                ))}
+              </div>
+            </Panneau>
+          ) : null}
+        </div>
       ) : null}
 
       {aTraiter === 0 && !arrivees.isPending ? (
@@ -161,6 +197,17 @@ export function Aujourdhui() {
           </p>
         </Panneau>
       ) : null}
+    </div>
+  );
+}
+
+function Indicateur({ valeur, libelle }: { valeur: number; libelle: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="font-display text-xl leading-none tabular-nums text-creme sm:text-2xl">
+        {valeur}
+      </p>
+      <p className="mt-1 text-xs leading-snug text-creme/60">{libelle}</p>
     </div>
   );
 }

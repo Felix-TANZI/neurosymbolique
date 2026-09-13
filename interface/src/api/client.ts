@@ -7,6 +7,7 @@
  */
 
 import type {
+  AgentAjoute,
   AgentConsulte,
   Anomalie,
   ChambreConsultee,
@@ -15,14 +16,19 @@ import type {
   DemandeAffectation,
   DemandePlanification,
   DemandeSoumise,
+  DisponibiliteModifiee,
+  EtatDeChambreModifie,
   EtatDeLEtablissement,
   IncidentConsulte,
+  InterventionConsultee,
+  ModificationConfirmee,
   ParametresDeDecision,
   Planification,
   Recommandation,
   ReponseRestituee,
   ReservationConsultee,
   TacheConsultee,
+  TechnicienConsulte,
 } from "./contrat";
 
 const RACINE = "/api";
@@ -93,6 +99,30 @@ async function lire<S>(chemin: string): Promise<S> {
   return (await reponse.json()) as S;
 }
 
+async function modifier<E, S>(chemin: string, corps: E): Promise<S> {
+  const reponse = await fetch(`${RACINE}${chemin}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(corps),
+  });
+
+  if (!reponse.ok) {
+    throw await lireAnomalie(reponse);
+  }
+
+  return (await reponse.json()) as S;
+}
+
+async function retirer<S>(chemin: string): Promise<S> {
+  const reponse = await fetch(`${RACINE}${chemin}`, { method: "DELETE" });
+
+  if (!reponse.ok) {
+    throw await lireAnomalie(reponse);
+  }
+
+  return (await reponse.json()) as S;
+}
+
 function parametres(entrees: Record<string, string | boolean | undefined>): string {
   const retenues = Object.entries(entrees).filter(
     ([, valeur]) => valeur !== undefined && valeur !== false,
@@ -145,6 +175,46 @@ export function consulterTaches(secteur?: string): Promise<TacheConsultee[]> {
 
 export function consulterIncidents(): Promise<IncidentConsulte[]> {
   return lire<IncidentConsulte[]>("/incidents");
+}
+
+export function consulterLesTechniciens(): Promise<TechnicienConsulte[]> {
+  return lire<TechnicienConsulte[]>("/techniciens");
+}
+
+export function consulterLesInterventions(): Promise<InterventionConsultee[]> {
+  return lire<InterventionConsultee[]>("/interventions");
+}
+
+export function modifierUneChambre(
+  numero: string,
+  modification: EtatDeChambreModifie,
+): Promise<ModificationConfirmee> {
+  return modifier<EtatDeChambreModifie, ModificationConfirmee>(
+    `/simulation/chambres/${numero}`,
+    modification,
+  );
+}
+
+export function inscrireUnAgent(
+  agent: AgentAjoute,
+): Promise<ModificationConfirmee> {
+  return envoyer<AgentAjoute, ModificationConfirmee>("/simulation/agents", agent);
+}
+
+export function retirerUnAgent(
+  identifiant: string,
+): Promise<ModificationConfirmee> {
+  return retirer<ModificationConfirmee>(`/simulation/agents/${identifiant}`);
+}
+
+export function modifierUnTechnicien(
+  identifiant: string,
+  disponible: boolean,
+): Promise<ModificationConfirmee> {
+  return modifier<DisponibiliteModifiee, ModificationConfirmee>(
+    `/simulation/techniciens/${identifiant}`,
+    { disponible },
+  );
 }
 
 export function recommanderPourReservation(

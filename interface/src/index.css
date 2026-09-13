@@ -20,15 +20,35 @@
   --radius-carte: 1.125rem;
   --radius-pastille: 999px;
 
-  --text-enorme: 4.5rem;
+  --text-enorme: clamp(2.5rem, 6vw + 1rem, 4.5rem);
   --text-enorme--line-height: 1;
   --text-enorme--letter-spacing: -0.03em;
 }
 
 @layer base {
+  /*
+   * L'echelle de l'interface repose sur la taille de reference: textes,
+   * espacements et arrondis s'exprimant en rem, la reduire sur petit ecran
+   * resserre l'ensemble dans les memes proportions, sans reprendre chaque
+   * ecran.
+   */
   html {
     background-color: var(--color-creme);
     color: var(--color-encre);
+    font-size: 14px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  @media (min-width: 640px) {
+    html {
+      font-size: 15px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    html {
+      font-size: 16px;
+    }
   }
 
   body {
@@ -49,6 +69,19 @@
   :focus-visible {
     outline: 2px solid var(--color-accent);
     outline-offset: 3px;
+  }
+}
+
+/*
+ * Hors couche, afin de l'emporter sur les utilitaires de taille de texte: un
+ * navigateur mobile agrandit la page des qu'un champ de saisie descend sous
+ * 16 pixels, ce qui desorganise l'ecran au moment meme de la saisie.
+ */
+@media (max-width: 639px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 }
 

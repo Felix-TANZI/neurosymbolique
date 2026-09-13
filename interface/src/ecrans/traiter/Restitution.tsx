@@ -85,7 +85,7 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
 
   if (reponse.nature === "repartition" && reponse.repartition) {
     return (
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-3 sm:gap-5">
         <Repartition repartition={reponse.repartition} />
         <Panneau>
           <button
@@ -102,7 +102,7 @@ export function Restitution({ reponse, surReprise }: Proprietes) {
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 sm:gap-5">
       {reponse.arbitrage ? <Arbitrage arbitrage={reponse.arbitrage} /> : null}
       {reponse.consequences ? (
         <Consequences consequences={reponse.consequences} />
@@ -156,15 +156,17 @@ function Consultation({
     <Panneau>
       <div className="mb-4 flex items-start gap-3">
         <Info size={18} className="mt-1 shrink-0 text-service" />
-        <p className="font-display text-2xl leading-snug">{etat.enonce}</p>
+        <p className="font-display text-lg leading-snug sm:text-xl lg:text-2xl">
+          {etat.enonce}
+        </p>
       </div>
 
       {etat.elements.length > 0 ? (
-        <ul className="mb-4 grid gap-2 md:grid-cols-2">
+        <ul className="mb-4 grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-4">
           {etat.elements.map((element) => (
             <li
               key={element}
-              className="rounded-[var(--radius-carte)] bg-sourd px-4 py-2.5 text-sm"
+              className="min-w-0 rounded-[var(--radius-carte)] bg-sourd px-3 py-2 text-xs leading-snug sm:px-4 sm:py-2.5 sm:text-sm"
             >
               {element}
             </li>
@@ -208,7 +210,7 @@ function Arbitrage({ arbitrage }: { arbitrage: ArbitrageRestitue }) {
         <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-creme/60">
           Chambre {arbitrage.chambre}
         </p>
-        <p className="font-display text-3xl leading-tight text-creme">
+        <p className="font-display text-xl leading-tight text-creme sm:text-2xl lg:text-3xl">
           {arbitrage.chambre_proposee
             ? `${arbitrage.sejour_a_reloger} est reloge en ${arbitrage.chambre_proposee}`
             : `${arbitrage.sejour_a_reloger} ne peut etre reloge`}
@@ -263,7 +265,7 @@ function Arbitrage({ arbitrage }: { arbitrage: ArbitrageRestitue }) {
             Aucune chambre ne satisfait toutes les contraintes. Relacher l'une
             d'elles ouvrirait une solution.
           </p>
-          <div className="flex flex-col gap-3">
+          <div className="grid gap-2 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
             {arbitrage.leviers.map((levier) => (
               <Carte key={levier.enonce}>
                 <p className="text-sm leading-relaxed">{levier.enonce}</p>
@@ -295,7 +297,7 @@ function Consequences({
         </p>
         <p
           className={[
-            "font-display text-3xl leading-tight",
+            "font-display text-xl leading-tight sm:text-2xl lg:text-3xl",
             consequences.immobilise_la_chambre ? "text-creme" : "text-encre",
           ].join(" ")}
         >
@@ -380,7 +382,7 @@ function Relogement({ relogement }: { relogement: RelogementPropose }) {
             </p>
           ) : null}
 
-          <ul className="flex flex-col gap-2">
+          <ul className="grid grid-cols-2 gap-2 md:grid-cols-3">
             {relogement.options.map((option) => (
               <OptionRetenue key={option.chambre} option={option} />
             ))}
@@ -439,14 +441,14 @@ function OptionRetenue({ option }: { option: OptionProposee }) {
   return (
     <li
       className={[
-        "rounded-[var(--radius-carte)] px-4 py-3",
+        "min-w-0 rounded-[var(--radius-carte)] px-3 py-2.5 sm:px-4 sm:py-3",
         option.rang === 1 ? "bg-accent-sourd" : "bg-sourd",
       ].join(" ")}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
         <p
           className={[
-            "font-display text-xl leading-none",
+            "font-display text-lg leading-none sm:text-xl",
             option.rang === 1 ? "text-accent" : "text-encre",
           ].join(" ")}
         >
@@ -462,12 +464,15 @@ function OptionRetenue({ option }: { option: OptionProposee }) {
       {option.avantages.length > 0 || option.contreparties.length > 0 ? (
         <ul className="mt-2 flex flex-col gap-1">
           {option.avantages.map((avantage) => (
-            <li key={avantage} className="text-sm text-succes">
+            <li key={avantage} className="text-xs leading-snug text-succes sm:text-sm">
               {avantage}
             </li>
           ))}
           {option.contreparties.map((contrepartie) => (
-            <li key={contrepartie} className="text-sm text-service">
+            <li
+              key={contrepartie}
+              className="text-xs leading-snug text-service sm:text-sm"
+            >
               {contrepartie}
             </li>
           ))}
@@ -506,7 +511,7 @@ function Decision({
   return (
     <Panneau>
       <EnTeteDeSection eyebrow="Decision" titre="Que faites-vous ?" />
-      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-service">
+      <p className="mb-4 hidden max-w-2xl text-sm leading-relaxed text-service sm:block">
         Rien n'est applique. Votre decision est consignee au journal avec le
         raisonnement qui l'a produite.
       </p>
@@ -540,12 +545,12 @@ function Decision({
         </p>
       ) : null}
 
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:gap-3">
         <button
           type="button"
           onClick={() => engager("validee")}
           disabled={enCours}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-pastille)] bg-accent px-3 py-3 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40 sm:px-6"
         >
           <Check size={16} />
           Valider
@@ -554,24 +559,38 @@ function Decision({
           type="button"
           onClick={() => engager("corrigee")}
           disabled={enCours}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40"
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-3 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40 sm:px-5"
         >
           <PenLine size={16} />
-          {demandee === "corrigee" ? "Consigner la correction" : "Corriger"}
+          {demandee === "corrigee" ? (
+            <>
+              <span className="sm:hidden">Consigner</span>
+              <span className="hidden sm:inline">Consigner la correction</span>
+            </>
+          ) : (
+            "Corriger"
+          )}
         </button>
         <button
           type="button"
           onClick={() => engager("refusee")}
           disabled={enCours}
-          className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-5 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40"
+          className="inline-flex items-center justify-center gap-2 rounded-[var(--radius-pastille)] bg-sourd px-3 py-3 text-sm font-medium text-encre transition-colors hover:bg-bordure disabled:opacity-40 sm:px-5"
         >
           <X size={16} />
-          {demandee === "refusee" ? "Consigner le refus" : "Refuser"}
+          {demandee === "refusee" ? (
+            <>
+              <span className="sm:hidden">Consigner</span>
+              <span className="hidden sm:inline">Consigner le refus</span>
+            </>
+          ) : (
+            "Refuser"
+          )}
         </button>
         <button
           type="button"
           onClick={surReprise}
-          className="text-sm text-service hover:text-encre"
+          className="col-span-3 py-1 text-sm text-service hover:text-encre sm:py-0"
         >
           Abandonner
         </button>

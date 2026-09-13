@@ -35,7 +35,7 @@ export function PlanDIntervention({ plan }: { plan: PlanRestitue }) {
         </p>
         <p
           className={[
-            "font-display text-3xl leading-tight",
+            "font-display text-xl leading-tight sm:text-2xl lg:text-3xl",
             plan.est_complet ? "text-encre" : "text-creme",
           ].join(" ")}
         >
@@ -51,19 +51,22 @@ export function PlanDIntervention({ plan }: { plan: PlanRestitue }) {
       {plan.affectees.length > 0 ? (
         <Panneau>
           <EnTeteDeSection eyebrow="Ordre" titre="Interventions affectees" />
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-3">
             {plan.affectees.map((intervention, position) => {
               const criticite = CRITICITES[intervention.criticite] ?? COURANTE;
               return (
                 <Carte key={intervention.identifiant} retenue>
-                  <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      <Wrench size={16} className="mt-1 shrink-0 text-service" />
-                      <div>
-                        <p className="font-display text-lg leading-snug">
+                  <div className="mb-2 flex flex-wrap items-start justify-between gap-2 sm:gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <Wrench
+                        size={16}
+                        className="mt-1 hidden shrink-0 text-service sm:block"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-display text-base leading-snug sm:text-lg">
                           {position + 1}. Chambre {intervention.objet}
                         </p>
-                        <p className="text-sm text-service">
+                        <p className="text-xs text-service sm:text-sm">
                           {intervention.competence === "polyvalent"
                             ? `Sans specialite requise · ${intervention.technicien}`
                             : `${intervention.competence} · ${intervention.technicien}`}
@@ -74,7 +77,7 @@ export function PlanDIntervention({ plan }: { plan: PlanRestitue }) {
                       {criticite.libelle}
                     </Pastille>
                   </div>
-                  <p className="text-sm leading-relaxed text-service">
+                  <p className="text-xs leading-relaxed text-service sm:text-sm">
                     {intervention.motif}
                   </p>
                 </Carte>
@@ -93,19 +96,19 @@ export function PlanDIntervention({ plan }: { plan: PlanRestitue }) {
               <Pastille nature="attente">{plan.en_attente.length}</Pastille>
             }
           />
-          <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
             {plan.en_attente.map((manquee) => (
               <Carte key={manquee.identifiant}>
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-2 sm:gap-3">
                   <TriangleAlert
-                    size={16}
-                    className="mt-1 shrink-0 text-accent"
+                    size={15}
+                    className="mt-0.5 shrink-0 text-accent"
                   />
-                  <div>
-                    <p className="font-display text-lg leading-snug">
+                  <div className="min-w-0">
+                    <p className="font-display text-base leading-snug sm:text-lg">
                       {manquee.objet}
                     </p>
-                    <p className="text-sm text-service">
+                    <p className="text-xs text-service sm:text-sm">
                       {CAUSES[manquee.cause] ?? manquee.cause}
                       {manquee.detail ? ` — ${manquee.detail}` : ""}
                     </p>

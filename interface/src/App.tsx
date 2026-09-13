@@ -7,7 +7,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Enveloppe } from "@/navigation/Enveloppe";
 import { Aujourdhui } from "@/ecrans/aujourdhui/Aujourdhui";
 import { Traiter } from "@/ecrans/traiter/Traiter";
+import { Etablissement } from "@/ecrans/etablissement/Etablissement";
 import { Historique } from "@/ecrans/historique/Historique";
+import { Simulation } from "@/ecrans/simulation/Simulation";
 import { FournisseurDeSession } from "@/etat/FournisseurDeSession";
 
 const clientDeRequetes = new QueryClient({
@@ -25,7 +27,9 @@ export default function App() {
             <Route element={<Enveloppe />}>
               <Route index element={<Aujourdhui />} />
               <Route path="traiter" element={<Traiter />} />
+              <Route path="etablissement" element={<Etablissement />} />
               <Route path="historique" element={<Historique />} />
+              <Route path="simulation" element={<Simulation />} />
             </Route>
           </Routes>
         </BrowserRouter>

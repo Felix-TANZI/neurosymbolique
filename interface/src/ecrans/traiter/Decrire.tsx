@@ -40,7 +40,7 @@ export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
         titre="Que se passe-t-il ?"
       />
 
-      <p className="mb-4 max-w-2xl text-sm leading-relaxed text-service">
+      <p className="mb-4 hidden max-w-2xl text-sm leading-relaxed text-service sm:block">
         Ecrivez la situation comme vous la diriez a un collegue. Le systeme
         etablit ce qu'elle implique et vous soumet une proposition. Rien n'est
         engage sans votre accord.
@@ -60,22 +60,23 @@ export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
             placeholder="il y a une fuite dans la 319"
             disabled={enCours}
             aria-label="Description de la situation"
-            className="flex-1 rounded-[var(--radius-carte)] border border-bordure bg-creme px-4 py-3.5 text-base outline-none placeholder:text-service/50 focus:border-encre disabled:opacity-60"
+            className="min-w-0 flex-1 rounded-[var(--radius-carte)] border border-bordure bg-creme px-3 py-3 text-base outline-none placeholder:text-service/50 focus:border-encre disabled:opacity-60 sm:px-4 sm:py-3.5"
           />
           <button
             type="button"
             onClick={soumettre}
             disabled={enCours || !enonce.trim()}
-            className="inline-flex items-center gap-2 rounded-[var(--radius-pastille)] bg-encre px-6 py-3.5 text-sm font-medium text-creme transition-opacity hover:opacity-90 disabled:opacity-40"
+            aria-label={enCours ? "Lecture en cours" : "Soumettre"}
+            className="inline-flex shrink-0 items-center gap-2 rounded-[var(--radius-pastille)] bg-encre px-4 py-3 text-sm font-medium text-creme transition-opacity hover:opacity-90 disabled:opacity-40 sm:px-6 sm:py-3.5"
           >
             {enCours ? (
               <>
                 <RefreshCw size={16} className="animate-spin" />
-                Lecture
+                <span className="hidden sm:inline">Lecture</span>
               </>
             ) : (
               <>
-                Soumettre
+                <span className="hidden sm:inline">Soumettre</span>
                 <CornerDownLeft size={16} />
               </>
             )}
@@ -83,9 +84,11 @@ export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
         </div>
 
         {!enCours ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-service">Par exemple :</span>
-            {EXEMPLES.map((exemple) => (
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+            <span className="col-span-2 text-xs text-service sm:text-sm">
+              Par exemple :
+            </span>
+            {EXEMPLES.map((exemple, rang) => (
               <button
                 key={exemple}
                 type="button"
@@ -93,7 +96,12 @@ export function Decrire({ enCours, anomalie, surSoumission }: Proprietes) {
                   setEnonce(exemple);
                   surSoumission(exemple);
                 }}
-                className="rounded-[var(--radius-pastille)] bg-sourd px-3 py-1.5 text-sm text-encre transition-colors hover:bg-bordure"
+                className={[
+                  "rounded-[var(--radius-carte)] bg-sourd px-3 py-2 text-left text-xs leading-snug text-encre transition-colors hover:bg-bordure sm:rounded-[var(--radius-pastille)] sm:py-1.5 sm:text-sm",
+                  rang === EXEMPLES.length - 1 && EXEMPLES.length % 2 === 1
+                    ? "col-span-2"
+                    : "",
+                ].join(" ")}
               >
                 {exemple}
               </button>

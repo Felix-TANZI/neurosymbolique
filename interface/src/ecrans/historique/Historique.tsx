@@ -37,17 +37,19 @@ export function Historique() {
   const ecarts = entrees.filter((entree) => entree.marque_un_ecart).length;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-3 sm:gap-5">
       <Panneau ton="encre">
         <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-creme/60">
           Journal
         </p>
-        <p className="font-display text-[var(--text-enorme)] leading-none text-creme">
-          {entrees.length}
-        </p>
-        <p className="mt-2 font-display text-2xl text-creme">
-          {entrees.length === 1 ? "decision consignee" : "decisions consignees"}
-        </p>
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+          <p className="font-display text-[var(--text-enorme)] leading-none text-creme">
+            {entrees.length}
+          </p>
+          <p className="pb-1 font-display text-base text-creme sm:text-xl lg:text-2xl">
+            {entrees.length === 1 ? "decision consignee" : "decisions consignees"}
+          </p>
+        </div>
         {ecarts > 0 ? (
           <p className="mt-3 text-sm leading-relaxed text-creme/70">
             {ecarts} {ecarts === 1 ? "decision s'ecarte" : "decisions s'ecartent"}{" "}
@@ -85,7 +87,7 @@ export function Historique() {
               : "Aucune decision n'a encore ete consignee."}
           </p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="grid items-start gap-2 sm:gap-3 lg:grid-cols-2">
             {entrees.map((entree) => (
               <Entree key={entree.identifiant} entree={entree} />
             ))}
@@ -102,10 +104,12 @@ function Entree({ entree }: { entree: DecisionConsultee }) {
 
   return (
     <Carte retenue={entree.marque_un_ecart}>
-      <div className="mb-2 flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="font-display text-lg leading-snug">{entree.situation}</p>
-          <p className="text-sm text-service">
+      <div className="mb-2 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-display text-base leading-snug sm:text-lg">
+            {entree.situation}
+          </p>
+          <p className="text-xs text-service sm:text-sm">
             {new Date(entree.horodatage).toLocaleString("fr-FR")}
             {entree.valideur ? ` · ${entree.valideur}` : ""}
           </p>
@@ -115,7 +119,7 @@ function Entree({ entree }: { entree: DecisionConsultee }) {
         </Pastille>
       </div>
 
-      <p className="text-sm text-encre">{entree.proposition}</p>
+      <p className="text-xs text-encre sm:text-sm">{entree.proposition}</p>
 
       {entree.motif ? (
         <p className="mt-2 rounded-[var(--radius-carte)] bg-accent-sourd px-4 py-2.5 text-sm leading-relaxed">

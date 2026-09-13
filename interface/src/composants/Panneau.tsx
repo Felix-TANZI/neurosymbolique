@@ -29,7 +29,7 @@ export function Panneau({
 }: ProprietesPanneau) {
   return (
     <section
-      className={`rounded-[var(--radius-panneau)] ${FONDS[ton]} p-6 ${className}`}
+      className={`rounded-[var(--radius-panneau)] ${FONDS[ton]} p-4 sm:p-5 lg:p-6 ${className}`}
     >
       {children}
     </section>
@@ -44,14 +44,16 @@ interface ProprietesEnTete {
 
 export function EnTeteDeSection({ titre, eyebrow, action }: ProprietesEnTete) {
   return (
-    <header className="mb-5 flex items-end justify-between gap-4">
-      <div>
+    <header className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-2 sm:mb-5">
+      <div className="min-w-0">
         {eyebrow ? (
           <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-service">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="font-display text-2xl">{titre}</h2>
+        <h2 className="font-display text-lg leading-tight sm:text-xl lg:text-2xl">
+          {titre}
+        </h2>
       </div>
       {action}
     </header>
@@ -80,7 +82,7 @@ export function Carte({
 
   return (
     <article
-      className={`rounded-[var(--radius-carte)] bg-panneau p-5 ${bordure} ${survol} ${className}`}
+      className={`min-w-0 rounded-[var(--radius-carte)] bg-panneau p-3 sm:p-4 lg:p-5 ${bordure} ${survol} ${className}`}
     >
       {children}
     </article>

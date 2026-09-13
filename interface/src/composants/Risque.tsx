@@ -67,7 +67,7 @@ export function Abstention({
       <div className="flex items-start gap-3">
         <CircleHelp size={20} className="mt-1 shrink-0 text-accent" />
         <div>
-          <p className="font-display text-2xl leading-snug">
+          <p className="font-display text-lg leading-snug sm:text-xl lg:text-2xl">
             Je ne peux pas repondre de facon fiable
           </p>
           {risque.motifs.map((motif) => (

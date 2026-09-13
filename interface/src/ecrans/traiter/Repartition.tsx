@@ -22,12 +22,14 @@ export function Repartition({
         <p className="mb-1 text-xs font-medium uppercase tracking-[0.14em] text-creme/60">
           {repartition.chambres} chambres · {repartition.agents} agents
         </p>
-        <p className="font-display text-[var(--text-enorme)] leading-none text-creme">
-          {repartition.duree}
-        </p>
-        <p className="mt-2 font-display text-2xl text-creme">
-          avant l'achevement du service
-        </p>
+        <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+          <p className="font-display text-[var(--text-enorme)] leading-none text-creme">
+            {repartition.duree}
+          </p>
+          <p className="pb-1 font-display text-base text-creme sm:text-xl lg:text-2xl">
+            avant l'achevement du service
+          </p>
+        </div>
       </Panneau>
 
       <Panneau>
@@ -43,17 +45,17 @@ export function Repartition({
           }
         />
 
-        <div className="mb-4 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+        <div className="mb-4 grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
           {repartition.parts.map((part) => (
             <Carte key={part.rang}>
-              <div className="flex items-center gap-3">
-                <Users size={16} className="shrink-0 text-service" />
-                <div>
-                  <p className="font-display text-lg leading-none">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Users size={15} className="hidden shrink-0 text-service sm:block" />
+                <div className="min-w-0">
+                  <p className="font-display text-base leading-none sm:text-lg">
                     Agent {part.rang}
                   </p>
-                  <p className="mt-1 text-sm text-service">
-                    {part.chambres} chambres · {part.duree}
+                  <p className="mt-1 text-xs text-service sm:text-sm">
+                    {part.chambres} ch. · {part.duree}
                   </p>
                 </div>
               </div>
