@@ -12,7 +12,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronDown, PenLine, X } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { consulterLesDecisions } from "@/api/client";
 import type { DecisionConsultee, IssueDeDecision } from "@/api/contrat";
 import { Carte, EnTeteDeSection, Panneau } from "@/composants/Panneau";

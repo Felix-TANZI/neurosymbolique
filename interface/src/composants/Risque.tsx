@@ -11,7 +11,7 @@ import { CircleAlert, CircleCheck, CircleHelp, TriangleAlert } from "lucide-reac
 import type { RisqueApprecie } from "@/api/contrat";
 
 const APPARENCES: Record<
-  number,
+  1 | 2 | 3 | 4,
   { libelle: string; classe: string; Icone: typeof CircleCheck }
 > = {
   1: {
